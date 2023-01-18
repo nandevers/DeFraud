@@ -1,0 +1,5 @@
+run:
+	python preprocessing/get_data.py --local_path 'data/raw'
+
+tidy:
+	python preprocessing/tidy_data.py

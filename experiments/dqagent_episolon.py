@@ -1,0 +1,62 @@
+import time
+import pandas as pd
+import numpy as np
+from gym_insurance.envs.insurenv import InsurEnv
+from agents import DQNAgent
+
+AGGREGATE_STATS_EVERY = 5
+MODEL_NAME = "br_crop_insurance"
+data = pd.read_csv("data/processed/psr_train_set.csv")
+data = data.query("valor_indenização!=1147131.5")
+value_column = "valor_indenização"
+state_columns = data.columns[5:-1]
+budget = 10000000
+env = InsurEnv(data, value_column, state_columns, budget)
+env.reset()
+dir(env)
+agent = DQNAgent(env)
+done = False
+batch_size = 32
+EPISODES = 1000
+MIN_REWARD = -200
+
+for e in range(EPISODES):
+    state = env.reset()
+    state = np.reshape(state, [1, env.observation_space.shape[0]])
+    for t in range(500):
+        # env.render()
+        action = agent.act(state)
+        next_state, reward, done, _ = env.step(action)
+        reward = reward if not done else -10
+        next_state = np.reshape(next_state, [1, env.observation_space.shape[0]])
+        agent.remember(state, action, reward, next_state, done)
+        state = next_state
+
+        if done:
+            average_reward = sum(env.rewards[-AGGREGATE_STATS_EVERY:]) / len(
+                env.rewards[-AGGREGATE_STATS_EVERY:]
+            )
+            min_reward = min(env.rewards[-AGGREGATE_STATS_EVERY:])
+            max_reward = max(env.rewards[-AGGREGATE_STATS_EVERY:])
+            agent.tensorboard.update_stats(
+                reward_avg=average_reward,
+                step = t,
+                reward_min=min_reward,
+                reward_max=max_reward,
+                epsilon=agent.epsilon,
+            )
+
+            # Save model, but only when min reward is greater or equal a set value
+            if min_reward >= MIN_REWARD:
+
+                agent.model.save(
+                    f"models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model"
+                )
+                print(
+                    "episode: {}/{}, score: {}, e: {:.2}".format(
+                        e, EPISODES, t, agent.epsilon
+                    )
+                )
+                break
+    if len(agent.memory) > batch_size:
+        agent.replay(batch_size)
