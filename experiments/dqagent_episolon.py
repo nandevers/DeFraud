@@ -3,16 +3,27 @@ import pandas as pd
 import numpy as np
 from gym_insurance.envs.insurenv import InsurEnv
 from agents import DQNAgent
+from gym_insurance.envs.utils import ModifiedTensorBoard
 
 AGGREGATE_STATS_EVERY = 5
 MODEL_NAME = "br_crop_insurance"
-data = pd.read_csv("data/processed/psr_train_set.csv")
+
+tensorboard = ModifiedTensorBoard(
+    log_dir="logs/{}-{}".format(MODEL_NAME, int(time.time()))
+)
+
+
+data = pd.read_csv("../../data/processed/psr_train_set.csv")
 data = data.query("valor_indenização!=1147131.5")
 value_column = "valor_indenização"
 state_columns = data.columns[5:-1]
 budget = 10000000
 env = InsurEnv(data, value_column, state_columns, budget)
 env.reset()
+
+env.results
+
+
 dir(env)
 agent = DQNAgent(env)
 done = False
@@ -27,6 +38,7 @@ for e in range(EPISODES):
         # env.render()
         action = agent.act(state)
         next_state, reward, done, _ = env.step(action)
+        print(env.results)
         reward = reward if not done else -10
         next_state = np.reshape(next_state, [1, env.observation_space.shape[0]])
         agent.remember(state, action, reward, next_state, done)
@@ -38,9 +50,11 @@ for e in range(EPISODES):
             )
             min_reward = min(env.rewards[-AGGREGATE_STATS_EVERY:])
             max_reward = max(env.rewards[-AGGREGATE_STATS_EVERY:])
+            tensorboard.set_model(agent.model)
+
             agent.tensorboard.update_stats(
                 reward_avg=average_reward,
-                step = t,
+                step=t,
                 reward_min=min_reward,
                 reward_max=max_reward,
                 epsilon=agent.epsilon,
@@ -58,5 +72,5 @@ for e in range(EPISODES):
                     )
                 )
                 break
-    if len(agent.memory) > batch_size:
-        agent.replay(batch_size)
+        if len(agent.memory) > batch_size:
+            agent.replay(batch_size)

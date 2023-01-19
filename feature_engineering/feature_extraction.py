@@ -1,10 +1,11 @@
 import json
+
 import pandas as pd
 from f_utils import CumulativeCountEncoder, CumulativeEncoder
 
-PRD_SAMPLE_DATA = "data/processed/psr_sample.csv"
-PRD_FEAT_DATA = "data/processed/psr_featues.csv"
-PRD_SAMP_FEAT_DATA = "data/processed/psr_sampled_featues.csv"
+PRD_SAMPLE_DATA = "../../data/processed/psr_sample.csv"
+PRD_FEAT_DATA = "../../data/processed/psr_featues.csv"
+PRD_SAMP_FEAT_DATA = "../../data/processed/psr_sampled_featues.csv"
 
 if __name__ == "__main__":
     # load column dict
@@ -54,6 +55,4 @@ if __name__ == "__main__":
         "valor_indenização",
     ] + data.columns.to_list()[-25:]
 
-    data[write_cols].to_csv( PRD_SAMP_FEAT_DATA
-        , index=False
-    )
+    data[write_cols].to_csv(PRD_SAMP_FEAT_DATA, index=False)

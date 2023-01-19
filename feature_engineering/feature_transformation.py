@@ -47,8 +47,8 @@ STD_COLS = [
 def handle_missing_values(data, method):
     data["evento_preponderante"].fillna("outro", inplace=True)
     mmi = MeanMedianImputer(imputation_method=method)
-    mmi.fit(data.loc[data.dt_proposta <= "2013"])
-    data = mmi.transform(data)
+    mmi.fit(data.loc[STD_COLS[1:], data.dt_proposta <= "2013"])
+    data.loc[STD_COLS[1:],:] = mmi.transform(data.loc[STD_COLS[1:],:])
     return data
 
 
