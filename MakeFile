@@ -3,3 +3,6 @@ run:
 
 tidy:
 	python preprocessing/tidy_data.py
+
+clean:
+	rm -rf .\logs\*

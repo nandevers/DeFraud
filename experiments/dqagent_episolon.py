@@ -3,7 +3,10 @@ import pandas as pd
 import numpy as np
 from gym_insurance.envs.insurenv import InsurEnv
 from agents import DQNAgent
+
+#from experiments.agents import DQNAgent
 from gym_insurance.envs.utils import ModifiedTensorBoard
+
 
 AGGREGATE_STATS_EVERY = 5
 MODEL_NAME = "br_crop_insurance"
@@ -17,18 +20,17 @@ data = pd.read_csv("../../data/processed/psr_train_set.csv")
 data = data.query("valor_indenização!=1147131.5")
 value_column = "valor_indenização"
 state_columns = data.columns[5:-1]
-budget = 10000000
+budget = 1000000
 env = InsurEnv(data, value_column, state_columns, budget)
 env.reset()
 
-env.results
 
 
 dir(env)
 agent = DQNAgent(env)
 done = False
 batch_size = 32
-EPISODES = 1000
+EPISODES = 2
 MIN_REWARD = -200
 
 for e in range(EPISODES):
@@ -53,10 +55,12 @@ for e in range(EPISODES):
             tensorboard.set_model(agent.model)
 
             agent.tensorboard.update_stats(
-                reward_avg=average_reward,
                 step=t,
+                reward_avg=average_reward,
                 reward_min=min_reward,
                 reward_max=max_reward,
+                approved_pct=env.approved_pct,
+                pct_budget=env.budget.pct_budget,
                 epsilon=agent.epsilon,
             )
 
@@ -64,7 +68,7 @@ for e in range(EPISODES):
             if min_reward >= MIN_REWARD:
 
                 agent.model.save(
-                    f"models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model"
+                    f"logs/models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model"
                 )
                 print(
                     "episode: {}/{}, score: {}, e: {:.2}".format(
@@ -74,3 +78,19 @@ for e in range(EPISODES):
                 break
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
+
+
+from seaborn import histplot
+from matplotlib import pyplot as plt
+import tensorflow as tf
+
+with env.tensorboard.writer.as_default():
+    histplot(env.results, x="valor_indenização", hue="decision")
+    plt.show()
+    x = env.results.query("decision==1")["valor_indenização"].values
+    tf.summary.histogram("Approved", x, step=env.episodes, description="Appoved Values")
+
+    x = env.results.query("decision==0")["valor_indenização"].values
+    tf.summary.histogram(
+        "Rejected", x, step=env.episodes, description="Rejected Values"
+    )

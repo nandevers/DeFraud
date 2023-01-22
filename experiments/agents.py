@@ -1,20 +1,18 @@
 import random
 import time
 from collections import deque
-
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 import numpy as np
-import pandas as pd
-from gym_insurance.envs.insurenv import InsurEnv
+import tqdm
 from gym_insurance.envs.utils import ModifiedTensorBoard
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
 
 MODEL_NAME = "br_crop_insurance"
 
+
 class DQNAgent:
-    def __init__(self, env):
+    def __init__(self, env, model):
         self.env = env
+        self.env.reset()
         self.state_size = env.observation_space.shape[0]
         self.action_size = env.action_space.n
         self.memory = deque(maxlen=2000)
@@ -23,31 +21,32 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
+        self.target_update_counter = 0
         self.tensorboard = ModifiedTensorBoard(
             log_dir="logs/{}-{}".format(MODEL_NAME, int(time.time()))
         )
-        self.model = self._build_model()
-
-    def _build_model(self):
-        # Neural Net for Deep-Q learning Model
-        model = Sequential()
-        model.add(Dense(24, input_dim=self.state_size, activation="relu"))
-        model.add(Dense(24, activation="relu"))
-        model.add(Dense(self.action_size, activation="linear"))
-        model.compile(loss="mse", optimizer=Adam(lr=self.learning_rate))
+        self.model = model
         self.tensorboard.set_model(model)
-        return model
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
+        print(f'{state.shape} at {self.env.episodes}')
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
+        try:
+
+            act_values = self.model.predict(state)
+        except InvalidArgumentError:
+            import pdb
+            pdb.set_trace()
         return np.argmax(act_values[0])  # returns action
 
     def replay(self, batch_size):
+        # Start training only if certain number of samples is already saved
+        if len(self.memory) < batch_size:
+            return
         minibatch = random.sample(self.memory, batch_size)
         for state, action, reward, next_state, done in minibatch:
             target = reward
@@ -57,14 +56,7 @@ class DQNAgent:
                 )
             target_f = self.model.predict(state)
             target_f[0][action] = target
-            self.model.fit(
-                state,
-                target_f,
-                epochs=1,
-                verbose=0,
-                shuffle=False,
-                callbacks=[self.tensorboard] if self.env.done else None,
-            )
+            self.model.fit(state, target_f, batch_size=batch_size)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
@@ -93,3 +85,41 @@ class DQNAgent:
 
     def save(self, name):
         self.model.save_weights(name)
+
+    @property
+    def _shape_state(self):
+        return np.reshape(self.env.state, [1, self.env.observation_space.shape[0]])
+
+    @property
+    def _get_sa(self):
+        self.env.reset()
+        action = self.act(self._shape_state)
+        return self._shape_state, action
+
+    def fit(self, episodes, min_replay_memory_size, min_reward, batch_size):
+        assert min_replay_memory_size > 2
+        for i in tqdm.tqdm(range(1, episodes + 1), ascii=True, unit="episodes"):
+            self.env.reset()
+            self.min_replay_memory_size = min_replay_memory_size
+            state, action = self._get_sa
+            print(i)
+            while not self.env.done:
+                action = self.act(state)
+                next_state, reward, done, _ = self.env.step(action)
+                next_state = self._shape_state
+                self.remember(state, action, reward, next_state, done)
+                self.replay(batch_size)
+
+            # Update target network counter every episode
+            if done:
+                self.target_update_counter += 1
+                self.tensorboard.update_stats(
+                        reward=sum(self.env.rewards),
+                        min_reward=min(self.env.rewards),
+                        approved_pct=self.env.approved_pct,
+                        budget_pct=self.env.budget.pct_budget,
+                        step=i,
+                    )
+
+    def transform(self, data):
+        pass
