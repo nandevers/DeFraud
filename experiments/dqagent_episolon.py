@@ -4,7 +4,7 @@ import numpy as np
 from gym_insurance.envs.insurenv import InsurEnv
 from agents import DQNAgent
 
-#from experiments.agents import DQNAgent
+# from experiments.agents import DQNAgent
 from gym_insurance.envs.utils import ModifiedTensorBoard
 
 
@@ -23,7 +23,6 @@ state_columns = data.columns[5:-1]
 budget = 1000000
 env = InsurEnv(data, value_column, state_columns, budget)
 env.reset()
-
 
 
 dir(env)

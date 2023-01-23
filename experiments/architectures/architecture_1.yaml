@@ -1,0 +1,43 @@
+nn:
+  layers:
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  - activation: tanh
+    type: batch_normalization
+    units: 128
+  learning_rate: 0.1
+  loss: binary_crossentropy
+  optimizer: sgd
+  optimizer_params:
+    beta_1: 0.9
+    beta_2: 0.999
+tunning:
+  cross_val: 5
+  early_stopping:
+    monitor: val_loss
+    patience: 10

@@ -1,7 +1,8 @@
 import pandas as pd
 from gym_insurance.envs.insurenv import InsurEnvo
-data = pd.read_csv('data/processed/psr_train_set.csv')
-value_column = 'valor_indenização'
+
+data = pd.read_csv("data/processed/psr_train_set.csv")
+value_column = "valor_indenização"
 state_columns = data.columns[5:-1]
 budget = 10000
 env = InsurEnv(data, value_column, state_columns, budget)
@@ -24,8 +25,11 @@ for e in range(EPISODES):
         agent.remember(state, action, reward, next_state, done)
         state = next_state
         if done:
-            print("episode: {}/{}, score: {}, e: {:.2}"
-                    .format(e, EPISODES, time, agent.epsilon))
+            print(
+                "episode: {}/{}, score: {}, e: {:.2}".format(
+                    e, EPISODES, time, agent.epsilon
+                )
+            )
             break
     if len(agent.memory) > batch_size:
         agent.replay(batch_size)

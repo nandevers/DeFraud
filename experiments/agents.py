@@ -32,16 +32,10 @@ class DQNAgent:
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        print(f'{state.shape} at {self.env.episodes}')
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
-        try:
-
-            act_values = self.model.predict(state)
-        except InvalidArgumentError:
-            import pdb
-            pdb.set_trace()
-        return np.argmax(act_values[0])  # returns action
+        act_values = self.model.predict(state)
+        return np.argmax(act_values[0])
 
     def replay(self, batch_size):
         # Start training only if certain number of samples is already saved
@@ -56,7 +50,13 @@ class DQNAgent:
                 )
             target_f = self.model.predict(state)
             target_f[0][action] = target
-            self.model.fit(state, target_f, batch_size=batch_size)
+            self.model.fit(
+                state,
+                target_f,
+                batch_size=batch_size,
+                verbose=1,
+                #        callbacks=[self.tensorboard],
+            )
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
@@ -102,7 +102,6 @@ class DQNAgent:
             self.env.reset()
             self.min_replay_memory_size = min_replay_memory_size
             state, action = self._get_sa
-            print(i)
             while not self.env.done:
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
@@ -114,12 +113,14 @@ class DQNAgent:
             if done:
                 self.target_update_counter += 1
                 self.tensorboard.update_stats(
-                        reward=sum(self.env.rewards),
-                        min_reward=min(self.env.rewards),
-                        approved_pct=self.env.approved_pct,
-                        budget_pct=self.env.budget.pct_budget,
-                        step=i,
-                    )
+                    step=i,
+                    reward=sum(self.env.rewards),
+                    min_reward=min(self.env.rewards),
+                    approved_pct=self.env.approved_pct,
+                    budget_pct=self.env.budget.pct_budget,
+                    loss=self.model.history.history["loss"],
+                )
 
     def transform(self, data):
-        pass
+        # assert data.shape[1] == self.state_size
+        return self.predict(new_data=data)

@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
 
-#from experiments.agents import DQNAgent
+# from experiments.agents import DQNAgent
 from agents import DQNAgent
 
 
@@ -24,15 +24,24 @@ def build_model(state_size, action_size, learning_rate):
 
 data = pd.read_csv("../../data/processed/psr_train_set.csv")
 data = data.query("valor_indenização!=1147131.5")
+
+test_data = pd.read_csv("../../data/processed/psr_test_set.csv")
+test_data = test_data.query("valor_indenização!=1147131.5")
+
+
 value_column = "valor_indenização"
 state_columns = data.columns[5:-1]
 budget = 10000000
 env = InsurEnv(data, value_column, state_columns, budget)
 env.reset()
 
-model = build_model(env.observation_space.shape[0], env.action_space.n, learning_rate=.1)
+model = build_model(
+    env.observation_space.shape[0], env.action_space.n, learning_rate=0.1
+)
 model.summary()
 
 dqagent = DQNAgent(env, model)
 dqagent.fit(episodes=10, min_replay_memory_size=3, min_reward=3, batch_size=5)
-print(dqagent.env.episodes)
+
+
+dqagent.transform(test_data)

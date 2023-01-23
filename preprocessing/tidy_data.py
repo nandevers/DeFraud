@@ -25,17 +25,16 @@ def group_names(data):
     ]
     str_cols = str_cols + code_id_cols
 
-
     col_map = str_cols + code_id_cols + date_cols + int_cols + lat_long_cols
     value_cols = list(set(data.columns.to_list()) - set(col_map))
-    #TODO: this is tooooo ugly
+    # TODO: this is tooooo ugly
     cols_dict = {
         "str_cols": str_cols,
         "code_id_cols": code_id_cols,
         "int_cols": int_cols,
         "date_cols": date_cols,
         "lat_long_cols": lat_long_cols,
-        "value_columns": value_cols
+        "value_columns": value_cols,
     }
     file_path = "cols_dict.json"
     with open(file_path, "w") as f:

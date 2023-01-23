@@ -1,11 +1,10 @@
-
 import re
+
 
 def convert_cols_to_float(data, cols):
     for col in cols:
         data[col] = data[col].apply(lambda x: float(x.replace(",", "")))
     return data
-
 
 
 def filter_columns(data, patterns):
@@ -24,4 +23,3 @@ def filter_columns(data, patterns):
         A list of column names.
     """
     return [col for col in data.columns if any(re.search(p, col) for p in patterns)]
-

@@ -1,0 +1,44 @@
+nn:
+  layers:
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  - activation: relu
+    type: dense
+    units: 32
+  - type: batch_normalization
+  learning_rate: 0.01
+  loss: binary_crossentropy
+  optimizer: adam
+  optimizer_params:
+    momentum: 0.9
+tunning:
+  cross_val: 10
+  early_stopping:
+    monitor: val_acc
+    patience: 10

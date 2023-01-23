@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 class CumulativeCountEncoder:
     def __init__(self, group_by_cols, sort_col):
         self.group_by_cols = group_by_cols
@@ -36,7 +37,7 @@ class CumulativeEncoder:
             )
         if isinstance(self.operation, list):
             cols = X.columns
-            return pd.concat([fn[o](X) for o in self.operation], axis = 1)
+            return pd.concat([fn[o](X) for o in self.operation], axis=1)
         return fn[self.operation](X)
 
     def _cum_max(self, data):
@@ -65,5 +66,3 @@ class CumulativeEncoder:
             .transform(lambda x: x)
         )
         return data
-
-
