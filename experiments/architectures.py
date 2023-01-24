@@ -1,33 +1,19 @@
-from keras.optimizers import Adam, SGD
-from keras.callbacks import EarlyStopping
+import yaml
+from keras.models import Sequential
+from keras.layers import Dense, BatchNormalization, Dropout
+from keras.optimizers import Adam
+from keras.losses import MeanSquaredError
 from sklearn.model_selection import KFold
 
-optimizer_dict = {'adam': Adam, 'sgd': SGD}
 
-def build_model(config_file, X, y):
-    # Read YAML file
-    with open(config_file, 'r') as f:
-        config = yaml.safe_load(f)
 
-    # Parse YAML
-    learning_rate = config['learning_rate']
-    loss = config['loss']
-    optimizer_name = config['optimizer']
-    optimizer_params = config['optimizer_params']
-    layers = config['layers']
-    early_stopping = config['early_stopping']
-    cross_val = config['cross_val']
 
-    # Define a dictionary of layer types and corresponding functions
-    layer_dict = {'dense': Dense, 'batch_normalization': BatchNormalization, 'dropout': Dropout, 'lambda': Lambda}
-
-    # Build network
+def build_model(state_size, action_size, learning_rate):
+    # Neural Net for Deep-Q learning Model
     model = Sequential()
-    for layer in layers:
-        layer_type = layer.pop('type')
-        layer_func = layer_dict[layer_type]
-        model.add(layer_func(**layer))
-
-    optimizer = optimizer_dict[optimizer_name](learning_rate=learning_rate, **optimizer_params)
-    model.compile(loss=loss, optimizer=optimizer)
+    model.add(Dense(24, input_dim=state_size, activation="relu"))
+    model.add(Dense(24, activation="relu"))
+    model.add(Dense(action_size, activation="linear"))
+    model.compile(loss="mse", optimizer=Adam(learning_rate=learning_rate))
+    return model
 

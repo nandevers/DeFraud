@@ -122,5 +122,11 @@ class DQNAgent:
                 )
 
     def transform(self, data):
+        self.env.reset()
+        self.test_data = data
+        for i in data.iterrows():
+            values = list(i) + [self.env.pct_budget, self.env.approved / self.env.steps]
+
+        return np.reshape(values,  [1, data.shape[1]])
         # assert data.shape[1] == self.state_size
-        return self.predict(new_data=data)
+        #return self.predict(new_data=data)
