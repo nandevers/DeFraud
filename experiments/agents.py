@@ -112,14 +112,17 @@ class DQNAgent:
             # Update target network counter every episode
             if done:
                 self.target_update_counter += 1
-                self.tensorboard.update_stats(
-                    step=i,
-                    reward=sum(self.env.rewards),
-                    min_reward=min(self.env.rewards),
-                    approved_pct=self.env.approved_pct,
-                    budget_pct=self.env.budget.pct_budget,
-                    loss=self.model.history.history["loss"],
-                )
+                try:
+                    self.tensorboard.update_stats(
+                        step=i,
+                        reward=sum(self.env.rewards),
+                        min_reward=min(self.env.rewards),
+                        approved_pct=self.env.approved_pct,
+                        budget_pct=self.env.budget.pct_budget,
+                        loss=self.model.history.history["loss"],
+                    )
+                except:
+                    pass
 
     def transform(self, data):
         self.env.reset()

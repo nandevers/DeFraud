@@ -4,14 +4,14 @@ import time
 import numpy as np
 import pandas as pd
 
-from experiments.agents import DQNAgent
-from experiments.architectures import build_model
+#from experiments.agents import DQNAgent
+#from experiments.architectures import build_model
 from agents import DQNAgent
 from architectures import build_model
 from gym_insurance.envs.insurenv import InsurEnv
 
 VALUE_COLUMN = "valor_indenização"
-BUDGET = 10000000
+BUDGET = 9999999
 
 
 train_data = pd.read_csv("../../data/processed/psr_train_set.csv")
@@ -25,12 +25,12 @@ state_columns = train_data.columns[5:-1]
 env = InsurEnv(train_data, VALUE_COLUMN, state_columns, BUDGET)
 env.reset()
 model = build_model(
-    env.observation_space.shape[0], env.action_space.n, learning_rate=0.1
+    env.observation_space.shape[0], env.action_space.n, learning_rate=0.01
 )
 model.summary()
 
 dqagent = DQNAgent(env, model)
-dqagent.fit(episodes=10, min_replay_memory_size=3, min_reward=3, batch_size=5)
+dqagent.fit(episodes=30, min_replay_memory_size=300, min_reward=3, batch_size=50)
 
 dqagent.env.results.to_csv(dqagent.tensorboard.log_dir + '/train_results.csv' , index = False)
 
@@ -52,7 +52,4 @@ for i, j in enumerate(test_data[dqagent.env.state_columns].iterrows()):
         break
 dqagent.env.results
 dqagent.env.steps
-
-
-dqagent.model.predict(test_data[dqagent.env.state_columns].iloc[0].values)
-dqagent.transform(test_data)
+test_data.query('decisions == decisions').to_csv(dqagent.tensorboard.log_dir + '/test_results.csv' , index = False)
