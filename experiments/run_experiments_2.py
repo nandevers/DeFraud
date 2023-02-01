@@ -30,7 +30,7 @@ model = build_model(
 model.summary()
 
 dqagent = DQNAgent(env, model)
-dqagent.fit(episodes=30, min_replay_memory_size=300, min_reward=3, batch_size=50)
+dqagent.fit(episodes=30, min_replay_memory_size=150, min_reward=3, batch_size=100)
 
 dqagent.env.results.to_csv(
     dqagent.tensorboard.log_dir + "/train_results.csv", index=False

@@ -45,23 +45,23 @@ for e in range(EPISODES):
         agent.remember(state, action, reward, next_state, done)
         state = next_state
 
+        # tensorboard.set_model(agent.model)
+        agent.tensorboard.update_stats(
+            step=t,
+            reward_avg=average_reward,
+            reward_min=min_reward,
+            reward_max=max_reward,
+            approved_pct=env.approved_pct,
+            pct_budget=env.budget.pct_budget,
+            epsilon=agent.epsilon,
+        )
+
         if done:
             average_reward = sum(env.rewards[-AGGREGATE_STATS_EVERY:]) / len(
                 env.rewards[-AGGREGATE_STATS_EVERY:]
             )
             min_reward = min(env.rewards[-AGGREGATE_STATS_EVERY:])
             max_reward = max(env.rewards[-AGGREGATE_STATS_EVERY:])
-            tensorboard.set_model(agent.model)
-
-            agent.tensorboard.update_stats(
-                step=t,
-                reward_avg=average_reward,
-                reward_min=min_reward,
-                reward_max=max_reward,
-                approved_pct=env.approved_pct,
-                pct_budget=env.budget.pct_budget,
-                epsilon=agent.epsilon,
-            )
 
             # Save model, but only when min reward is greater or equal a set value
             if min_reward >= MIN_REWARD:

@@ -1,12 +1,13 @@
 import json
+import os
+from pathlib import Path
 
 import pandas as pd
 from constants import RAW_COL_TYPES
 from data_handler import convert_cols_to_float, filter_columns
 
-RAW_DATA = "data/raw/psrdadosabertos2006a2015csv.csv"
-PRD_FOLDER = "data/processed/"
-PRD_DATA = "data/processed/psrdadosabertos2006a2015csv.csv"
+RAW_DATA = Path("data/raw/")
+PRD_DATA = Path("data/processed/")
 
 
 def group_names(data):
@@ -42,12 +43,12 @@ def group_names(data):
     return str_cols, value_cols, date_cols
 
 
-if __name__ == "__main__":
-    data = pd.concat(
+def read_chunk(path):
+    return pd.concat(
         [
             chunk.replace("-", "")
             for chunk in pd.read_csv(
-                RAW_DATA,
+                path,
                 delimiter=";",
                 encoding="latin-1",
                 dtype=RAW_COL_TYPES,
@@ -57,15 +58,58 @@ if __name__ == "__main__":
             )
         ]
     )
+
+
+def output_cols(data_list: [pd.DataFrame]):
+    all_cols = []
+    [all_cols.insert(0, d.columns.to_list()) for d in data_list]
+    unique_cols = set(all_cols[0])
+    unique_cols.remove("NR_DECIMAL_LATITUDE")
+    unique_cols.remove("NR_DECIMAL_LONGITUDE")
+    return unique_cols
+
+
+def clean_data(data):
+    data[-1]["NivelDeCobertura"] = data[-1]["NivelDeCobertura"].str.replace("%", "")
+    data[-1]["NivelDeCobertura"] = (
+        data[-1]["NivelDeCobertura"].fillna("9999").astype(int)
+    )
+    data[-1]["NivelDeCobertura"] = data[-1]["NivelDeCobertura"] / 100
+    return data
+
+
+def concat_data(data):
+    keep_cols = output_cols(data)
+    data = [d[keep_cols] for d in data]
+    return pd.concat(data, axis=0)
+
+
+def parse_date(date):
+    try:
+        return pd.to_datetime(date, format="%d/%m/%Y")
+    except ValueError:
+        return pd.to_datetime(date, format="%d/%m/%Y %H:%M")
+
+
+if __name__ == "__main__":
+
+    raw_files = os.listdir(RAW_DATA)
+    data = [read_chunk(RAW_DATA / f) for f in raw_files]
+
+    data = clean_data(data)
+    data = concat_data(data)
+
     data.columns = data.columns.str.lower()
     str_cols, value_cols, date_cols = group_names(data)
 
     # Apply Transformations
     data[str_cols] = data[str_cols].astype(str)
+    data[value_cols] = data[value_cols].apply(lambda x: x.replace("%", ""))
     data[value_cols] = data[value_cols].apply(
         lambda x: x.str.replace(",", "").astype(float)
     )
-    data[date_cols] = data[date_cols].apply(pd.to_datetime, format="%d/%m/%Y")
+
+    data[date_cols] = data[date_cols].apply(parse_date)
     data["formal_latitude"] = (
         data["nr_grau_lat"].astype(str)
         + "° "
@@ -84,4 +128,4 @@ if __name__ == "__main__":
     )
 
     # Write data to predefined path
-    data.to_csv(PRD_DATA, index=False)
+    data.to_csv(PRD_DATA / "rawpsrdadosabertos2006a2022csv.csv", index=False)

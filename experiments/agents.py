@@ -1,5 +1,6 @@
 import random
 import time
+import tensorflow as tf
 from collections import deque
 from tensorflow.python.framework.errors_impl import InvalidArgumentError
 import numpy as np
@@ -39,6 +40,10 @@ class DQNAgent:
 
     def replay(self, batch_size):
         # Start training only if certain number of samples is already saved
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+            log_dir="logs/{}-{}/loss".format(MODEL_NAME, int(time.time())),
+            histogram_freq=1,
+        )
         if len(self.memory) < batch_size:
             return
         minibatch = random.sample(self.memory, batch_size)
@@ -55,6 +60,7 @@ class DQNAgent:
                 target_f,
                 batch_size=batch_size,
                 verbose=1,
+                callbacks=[tensorboard_callback]
                 #        callbacks=[self.tensorboard],
             )
         if self.epsilon > self.epsilon_min:
@@ -109,20 +115,24 @@ class DQNAgent:
                 self.remember(state, action, reward, next_state, done)
                 self.replay(batch_size)
 
-            # Update target network counter every episode
-            if done:
-                self.target_update_counter += 1
-                try:
-                    self.tensorboard.update_stats(
-                        step=i,
-                        reward=sum(self.env.rewards),
-                        min_reward=min(self.env.rewards),
-                        approved_pct=self.env.approved_pct,
-                        budget_pct=self.env.budget.pct_budget,
-                        loss=self.model.history.history["loss"],
-                    )
-                except:
-                    pass
+                # Update target network counter every episode
+                self.tensorboard.update_stats(
+                    step=i,
+                    reward=sum(self.env.rewards),
+                    min_reward=min(self.env.rewards),
+                    approved_pct=self.env.approved_pct,
+                    budget_pct=self.env.budget.pct_budget,
+                    # loss = self.model.history.history["loss"],
+                )
+                if done:
+                    self.target_update_counter += 1
+                    try:
+                        self.tensorboard.update_stats(
+                            step=i,
+                            loss=self.model.history.history["loss"],
+                        )
+                    except:
+                        pass
 
     def transform(self, data):
         self.env.reset()
@@ -130,6 +140,6 @@ class DQNAgent:
         for i in data.iterrows():
             values = list(i) + [self.env.pct_budget, self.env.approved / self.env.steps]
 
-        return np.reshape(values,  [1, data.shape[1]])
+        return np.reshape(values, [1, data.shape[1]])
         # assert data.shape[1] == self.state_size
-        #return self.predict(new_data=data)
+        # return self.predict(new_data=data)

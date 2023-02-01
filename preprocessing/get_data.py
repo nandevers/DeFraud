@@ -2,7 +2,9 @@ import os
 import argparse
 import urllib.request
 
-URL = "https://dados.agricultura.gov.br/dataset/baefdc68-9bad-4204-83e8-f2888b79ab48/resource/3360a882-f13e-4dc7-aaaa-a1941e950dbc/download/psrdadosabertos2006a2015csv.csv"
+URL_1 = "https://dados.agricultura.gov.br/dataset/baefdc68-9bad-4204-83e8-f2888b79ab48/resource/97f29a77-4e7e-44bf-99b3-a2d75911b6bf/download/psrdadosabertos2006a2015csv.csv"
+URL_2 = "https://dados.agricultura.gov.br/dataset/baefdc68-9bad-4204-83e8-f2888b79ab48/resource/54e04a6b-15b3-4bda-a330-b8e805deabe4/download/psrdadosabertos2016a2021csv.csv"
+URL_3 = "https://dados.agricultura.gov.br/dataset/baefdc68-9bad-4204-83e8-f2888b79ab48/resource/8fd05876-7679-44c6-ae9a-50e07c765a25/download/psrdadosabertos2022csv.csv"
 
 
 def download_file(url, local_path):
@@ -26,5 +28,14 @@ if __name__ == "__main__":
     if not os.path.exists(local_path):
         os.makedirs(local_path)
 
-    download_file(URL, local_path + "/psrdadosabertos2006a2015csv.csv")
+    file_name = URL_1.split("/")[-1]
+    download_file(URL_1, local_path + file_name)
+    print(f"File saved at {local_path}")
+
+    file_name = URL_2.split("/")[-1]
+    download_file(URL_2, local_path + file_name)
+    print(f"File saved at {local_path}")
+
+    file_name = URL_3.split("/")[-1]
+    download_file(URL_3, local_path + file_name)
     print(f"File saved at {local_path}")

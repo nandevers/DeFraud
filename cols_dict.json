@@ -1,65 +1,63 @@
 {
     "str_cols": [
-        "nm_razao_social",
-        "nm_segurado",
-        "nm_municipio_propriedade",
-        "sg_uf_propriedade",
-        "nm_classif_produto",
         "nm_cultura_global",
-        "evento_preponderante",
-        "cd_processo_susep",
-        "nr_proposta",
+        "nm_municipio_propriedade",
+        "nm_segurado",
+        "nm_classif_produto",
+        "sg_uf_propriedade",
+        "nm_razao_social",
+        "cd_geocmu",
+        "nr_apolice",
         "id_proposta",
         "nr_documento_segurado",
         "nr_produtividade_estimada",
-        "nr_apolice",
-        "cd_geocmu"
+        "nr_proposta",
+        "cd_processo_susep"
     ],
     "code_id_cols": [
-        "cd_processo_susep",
-        "nr_proposta",
+        "cd_geocmu",
+        "nr_apolice",
         "id_proposta",
         "nr_documento_segurado",
         "nr_produtividade_estimada",
-        "nr_apolice",
-        "cd_geocmu"
+        "nr_proposta",
+        "cd_processo_susep"
     ],
     "int_cols": [
         "latitude",
-        "nr_grau_lat",
-        "nr_min_lat",
-        "nr_seg_lat",
-        "longitude",
         "nr_grau_long",
         "nr_min_long",
+        "nr_seg_lat",
+        "longitude",
         "nr_seg_long",
+        "nr_grau_lat",
+        "nr_min_lat",
         "nr_animal",
         "ano_apolice"
     ],
     "date_cols": [
         "dt_proposta",
-        "dt_inicio_vigencia",
         "dt_fim_vigencia",
+        "dt_inicio_vigencia",
         "dt_apolice"
     ],
     "lat_long_cols": [
         "latitude",
-        "nr_grau_lat",
-        "nr_min_lat",
-        "nr_seg_lat",
-        "longitude",
         "nr_grau_long",
         "nr_min_long",
-        "nr_seg_long"
+        "nr_seg_lat",
+        "longitude",
+        "nr_seg_long",
+        "nr_grau_lat",
+        "nr_min_lat"
     ],
     "value_columns": [
-        "nr_area_total",
-        "niveldecobertura",
-        "valor_indeniza\u00e7\u00e3o",
-        "vl_subvencao_federal",
         "pe_taxa",
+        "niveldecobertura",
+        "vl_subvencao_federal",
+        "vl_limite_garantia",
+        "nr_area_total",
         "vl_premio_liquido",
-        "nr_produtividade_segurada",
-        "vl_limite_garantia"
+        "nr_produtividade_segurada"
     ]
 }
