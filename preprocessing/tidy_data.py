@@ -1,10 +1,12 @@
 import json
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
 from constants import RAW_COL_TYPES
-from data_handler import convert_cols_to_float, filter_columns
+from data_handler import filter_columns
+from unidecode import unidecode
 
 RAW_DATA = Path("data/raw/")
 PRD_DATA = Path("data/processed/")
@@ -46,10 +48,11 @@ def group_names(data):
 def read_chunk(path):
     return pd.concat(
         [
-            chunk.replace("-", "")
+            chunk.replace({"-": "", "%": "", ",": "."}, regex=True)
             for chunk in pd.read_csv(
                 path,
                 delimiter=";",
+                decimal=",",
                 encoding="latin-1",
                 dtype=RAW_COL_TYPES,
                 na_values=["-"],
@@ -62,54 +65,16 @@ def read_chunk(path):
 
 def output_cols(data_list: [pd.DataFrame]):
     all_cols = []
-    [all_cols.insert(0, d.columns.to_list()) for d in data_list]
-    unique_cols = set(all_cols[0])
-    unique_cols.remove("NR_DECIMAL_LATITUDE")
-    unique_cols.remove("NR_DECIMAL_LONGITUDE")
-    return unique_cols
+    [all_cols.extend(d.columns.to_list()) for d in data_list]
+    unique_cols = set(all_cols)
+    return list(unique_cols)
 
 
 def clean_data(data):
-    data[-1]["NivelDeCobertura"] = data[-1]["NivelDeCobertura"].str.replace("%", "")
-    data[-1]["NivelDeCobertura"] = (
-        data[-1]["NivelDeCobertura"].fillna("9999").astype(int)
+    data["niveldecobertura"] = (data["niveldecobertura"].fillna("9999")).astype(float)
+    data.loc[data["niveldecobertura"].astype(float) > 10, "niveldecobertura"] = (
+        data.loc[data["niveldecobertura"].astype(float) > 10, "niveldecobertura"] / 100
     )
-    data[-1]["NivelDeCobertura"] = data[-1]["NivelDeCobertura"] / 100
-    return data
-
-
-def concat_data(data):
-    keep_cols = output_cols(data)
-    data = [d[keep_cols] for d in data]
-    return pd.concat(data, axis=0)
-
-
-def parse_date(date):
-    try:
-        return pd.to_datetime(date, format="%d/%m/%Y")
-    except ValueError:
-        return pd.to_datetime(date, format="%d/%m/%Y %H:%M")
-
-
-if __name__ == "__main__":
-
-    raw_files = os.listdir(RAW_DATA)
-    data = [read_chunk(RAW_DATA / f) for f in raw_files]
-
-    data = clean_data(data)
-    data = concat_data(data)
-
-    data.columns = data.columns.str.lower()
-    str_cols, value_cols, date_cols = group_names(data)
-
-    # Apply Transformations
-    data[str_cols] = data[str_cols].astype(str)
-    data[value_cols] = data[value_cols].apply(lambda x: x.replace("%", ""))
-    data[value_cols] = data[value_cols].apply(
-        lambda x: x.str.replace(",", "").astype(float)
-    )
-
-    data[date_cols] = data[date_cols].apply(parse_date)
     data["formal_latitude"] = (
         data["nr_grau_lat"].astype(str)
         + "° "
@@ -126,6 +91,60 @@ if __name__ == "__main__":
         + data["nr_seg_long"].astype(str)
         + "'' W"
     )
+    return data
 
-    # Write data to predefined path
-    data.to_csv(PRD_DATA / "rawpsrdadosabertos2006a2022csv.csv", index=False)
+
+def concat_data(data):
+    keep_cols = output_cols(data)
+    io = []
+    for d in data:
+        try:
+            io.append(d[keep_cols])
+        except:
+            # Create sets of a,b
+            setA = set(keep_cols)
+            setB = set(
+                [
+                    "EVENTO_PREPONDERANTE",
+                    "VALOR_INDENIZAÇÃO",
+                    "NR_DECIMAL_LONGITUDE",
+                    "NR_DECIMAL_LATITUDE",
+                ]
+            )
+            # Get new set with elements that are only in a but not in b
+            onlyInA = setA.difference(setB)
+            onlyInA = list(onlyInA)
+            io.append(d[onlyInA])
+    return pd.concat(io, axis=0, ignore_index=True, join="outer")
+
+
+def parse_date(date):
+    try:
+        return pd.to_datetime(date, format="%d/%m/%Y")
+    except ValueError:
+        return pd.to_datetime(date, format="%d/%m/%Y %H:%M")
+
+
+if __name__ == "__main__":
+    raw_files = os.listdir(RAW_DATA)
+    df = [read_chunk(RAW_DATA / f) for f in raw_files]
+
+    # Concat datasets
+    data = concat_data(df).copy()
+    del df
+
+    data.columns = [unidecode(c) for c in data.columns.str.lower()]
+    str_cols, value_cols, date_cols = group_names(data)
+
+    # Apply Transformations
+    data[str_cols + value_cols] = data[str_cols + value_cols].astype(str)
+
+    ## Clean up data
+    data = clean_data(data)
+    data["dt_proposta"] = pd.to_datetime(data["dt_proposta"], dayfirst=True)
+
+    ## Write data to predefined path
+    if not os.path.exists(PRD_DATA):
+        os.makedirs(PRD_DATA)
+
+    data.to_csv(PRD_DATA / "full_psr_dados_abertos.csv", index=False)

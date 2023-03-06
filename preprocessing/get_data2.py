@@ -11,15 +11,23 @@ URL_2 = "https://dados.agricultura.gov.br/dataset/baefdc68-9bad-4204-83e8-f2888b
 URL_3 = "https://dados.agricultura.gov.br/dataset/baefdc68-9bad-4204-83e8-f2888b79ab48/resource/8fd05876-7679-44c6-ae9a-50e07c765a25/download/psrdadosabertos2022csv.csv"
 URLs = [URL_1, URL_2, URL_3]
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
 
 def download_file(url, local_path):
-    # Open the url image, set stream to True, this will return the stream content.
+    logger.info(f"Downloading file from URL {url}")
     with urllib.request.urlopen(url) as url:
         s = url.read()
 
-    # Open a local file with wb ( write binary ) permission.
     with open(local_path, "wb") as f:
         f.write(s)
+        logger.info(f"File saved to {local_path}")
 
 
 def get_file_by_urls(local_path, URLs: list):
@@ -39,6 +47,9 @@ if __name__ == "__main__":
 
     file_list = get_file_by_urls(local_path=local_path, URLs=URLs)
     if all([os.path.exists(f) for f in file_list]):
-        print("Files already available")
+        logger.info("Files already available")
     else:
-        [download_file(u, local_path + u.split("/")[-1]) for u in URLs]
+        for url in URLs:
+            filename = url.split("/")[-1]
+            filepath = local_path + filename
+            download_file(url, filepath)

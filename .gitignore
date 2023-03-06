@@ -132,3 +132,8 @@ dmypy.json
 # tensorboard
 logs
 models
+
+# gym 
+gym-insurance
+.backup
+*.csv

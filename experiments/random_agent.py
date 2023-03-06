@@ -46,6 +46,7 @@ app.layout = html.Div(
     ]
 )
 
+
 # Define the callback function to update the rewards plot
 @app.callback(
     Output("rewards-over-time", "figure"), [Input("rewards-over-time", "figure")]

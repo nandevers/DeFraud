@@ -3,9 +3,9 @@ import json
 import pandas as pd
 from f_utils import CumulativeCountEncoder, CumulativeEncoder
 
-PRD_SAMPLE_DATA = "../../data/processed/psr_sample.csv"
-PRD_FEAT_DATA = "../../data/processed/psr_featues.csv"
-PRD_SAMP_FEAT_DATA = "../../data/processed/psr_sampled_featues.csv"
+PRD_SAMPLE_DATA = "data/processed/psr_soja_pr_sample.csv"
+PRD_FEAT_DATA = "data/processed/psr_features.csv"
+PRD_SAMP_FEAT_DATA = "data/processed/psr_sampled_features.csv"
 
 if __name__ == "__main__":
     # load column dict
@@ -17,8 +17,9 @@ if __name__ == "__main__":
     tdata = []
 
     # cumulative count encoding
+    data["dt_proposta"] = pd.to_datetime(data.dt_proposta, dayfirst=True)
     transformer = CumulativeCountEncoder(
-        group_by_cols=["nr_documento_segurado"], sort_col="dt_proposta"
+        group_by_cols=["nr_documento_segurado"], sort_col=["dt_proposta", "id_proposta"]
     )
     transformer.fit(data)
     data_transformed = transformer.transform(data)
@@ -26,33 +27,33 @@ if __name__ == "__main__":
 
     # cumulative operation encoding
     for c in cols_dict["value_columns"]:
+        print(f"Processing column: {c}")
         encoder = CumulativeEncoder(
             operation=["max", "min", "sum"],
             col=c,
             group_by_cols=["nr_documento_segurado"],
-            sort_col="dt_proposta",
+            sort_col=["dt_proposta", "id_proposta"],
         )
         encoder.fit(data)
         td = encoder.transform(data)
-        print(td.shape)
         tdata.append(td)
-
-    data = pd.concat(tdata, axis=1)
-    print(data.shape)
-    data = pd.concat([data, data_transformed.iloc[:, -1]], axis=1)
-    print(data.shape)
+    tdata = pd.concat(tdata, axis=1)
+    tdata = tdata.loc[:, ~tdata.columns.duplicated()]
+    data = pd.concat([data_transformed, tdata], axis=1)
     data = data.loc[:, ~data.columns.duplicated()]
-    print(data.shape)
+    del tdata
     # save to csv
+    # TODO: change this to parquet
     data.to_csv(PRD_FEAT_DATA, index=False)
 
-    # data = data.query("valor_indenização>100").loc[:, "second_digit"].unique()
     write_cols = [
         "nr_documento_segurado",
         "nr_proposta",
+        "id_proposta",
         "dt_proposta",
         "evento_preponderante",
-        "valor_indenização",
-    ] + data.columns.to_list()[-25:]
+        "valor_indenizacao",
+    ] + data.columns.to_list()
+    write_cols = list(set(write_cols))
 
     data[write_cols].to_csv(PRD_SAMP_FEAT_DATA, index=False)
