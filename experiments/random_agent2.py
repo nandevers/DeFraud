@@ -6,7 +6,7 @@ import plotly.graph_objs as go
 from dash import Input, Output, dcc, html
 from gym_insurance.envs.insurenv import InsurEnv
 
-VALUE_COLUMN = "valor_indenização"
+VALUE_COLUMN = "valor_indenizacao"
 BUDGET = 99999999
 
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         return hist_fig, fig
 
     train_data = pd.read_csv("../../data/processed/psr_train_set.csv").query(
-        "valor_indenização!=1147131.5"
+        "valor_indenizacao!=1147131.5"
     )
 
     state_columns = train_data.columns[5:-1]

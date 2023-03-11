@@ -6,7 +6,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 PRD_SAMP_FEAT_DATA = "data/processed/psr_sampled_features.csv"
 data = pd.read_csv(PRD_SAMP_FEAT_DATA)
 data.shape
-
+data.columns
 CUTOFF_YEAR = "2020"
 
 ID_COLS = [
@@ -50,7 +50,7 @@ def handle_missing_values(data, method):
     data["evento_preponderante"].fillna("outro", inplace=True)
     mmi = MeanMedianImputer(imputation_method=method)
     mmi.fit(data.loc[data.dt_proposta <= CUTOFF_YEAR, STD_COLS[1:]])
-    data.loc[: , STD_COLS[1:]] = mmi.transform(data.loc[:, STD_COLS[1:]])
+    data.loc[:, STD_COLS[1:]] = mmi.transform(data.loc[:, STD_COLS[1:]])
     return data
 
 
@@ -75,6 +75,7 @@ def standard_scaler(data):
     std_data = pd.DataFrame(std_data, columns=std_new_cols)
     data = pd.concat([data, std_data], axis=1)
     return data, std_new_cols
+
 
 data[STD_COLS[1:]]
 

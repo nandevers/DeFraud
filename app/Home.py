@@ -1,6 +1,8 @@
 import json
 import pandas as pd
+from pandas_profiling import ProfileReport
 import streamlit as st
+
 
 ID_COLS = [
     "nr_documento_segurado",
@@ -39,7 +41,6 @@ STD_COLS = [
 
 
 st.set_page_config(layout="wide")
-import plotly.graph_objects as go
 
 
 def read_cols():
@@ -54,12 +55,19 @@ ID = "nr_documento_segurado"
 sample = pd.read_csv("data/processed/psr_soja_pr_sample.csv")
 
 
+@st.cache_data
 def read_features():
     return pd.read_csv("data/processed/psr_sampled_features.csv")
 
 
+@st.cache_data
 def read_tfeatures():
-    return pd.read_csv('data/processed/psr_train_and_test_set.csv')
+    return pd.read_csv("data/processed/psr_train_and_test_set.csv")
+
+
+def profile_features():
+    yield ProfileReport(read_features()).to_file("assets/profile_features.html")
+
 
 st.markdown(
     """
@@ -113,15 +121,24 @@ with feature_t:
         )
 
         st.write("ID: ", selected_case_feat_df[ID].unique()[0])
-        st.dataframe(selected_case_feat_df.sort_values(['dt_proposta', 'id_proposta']))
+        st.dataframe(selected_case_feat_df.sort_values(["dt_proposta", "id_proposta"]))
 
 with tr_feature_t:
     if "selected_id" in st.session_state:
         selected_case_tfeat_df = read_tfeatures().query(
-                f"{ID}=='{st.session_state.selected_id}'"
-            )
+            f"{ID}=='{st.session_state.selected_id}'"
+        )
         st.dataframe(selected_case_tfeat_df)
-       
 
-with results_t:
-    pass
+
+# with results_t:
+#     if 'selected_id' in st.session_state:
+#         profile_features()
+#         selected_case_feat_df = read_features().query(
+#             f'{ID}=='"{st.session_state.selected_id}"'
+#         )
+#
+#         with open('assets/profile_features.html', 'r') as f:
+#             profile = f.read()
+#
+#         st.components.v1.html(profile)

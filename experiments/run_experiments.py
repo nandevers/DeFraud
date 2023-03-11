@@ -10,15 +10,15 @@ from agents import DQNAgent
 from architectures import build_model
 from gym_insurance.envs.insurenv import InsurEnv
 
-VALUE_COLUMN = "valor_indenização"
+VALUE_COLUMN = "valor_indenizacao"
 BUDGET = 9999999
 
 
 train_data = pd.read_csv("../../data/processed/psr_train_set.csv")
-train_data = train_data.query("valor_indenização!=1147131.5")
+train_data = train_data.query("valor_indenizacao!=1147131.5")
 
 test_data = pd.read_csv("../../data/processed/psr_test_set.csv")
-test_data = test_data.query("valor_indenização!=1147131.5")
+test_data = test_data.query("valor_indenizacao!=1147131.5")
 
 
 state_columns = train_data.columns[5:-1]

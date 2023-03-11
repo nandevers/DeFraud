@@ -3,8 +3,9 @@ from keras.layers import BatchNormalization, Dense, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.wrappers.scikit_learn import KerasClassifier
-from kerastuner import Hyperband, HyperParameter, HyperModel
-from sklearn.model_selection import KFold, cross_val_score
+
+# from kerastuner import Hyperband, HyperParameter, HyperModel
+# from sklearn.model_selection import KFold, cross_val_score
 
 loss_functions = [
     "mse",
@@ -22,7 +23,7 @@ loss_functions = [
 LOSS = {k: k for k in loss_functions}
 
 
-def build_model(state_size, action_size, learning_rate):
+def build_baseline_model(state_size, action_size, learning_rate):
     # Neural Net for Deep-Q learning Model
     model = Sequential()
     model.add(Dense(24, input_dim=state_size, activation="relu"))
@@ -75,45 +76,45 @@ LOSS["custom"] = custom_loss
 LOSS["f1_score"] = f1_score
 
 
-class MyHyperModel(HyperModel):
-    def __init__(self, x_train, y_train):
-        self.x_train = x_train
-        self.y_train = y_train
-        # self.loss = LOSS[loss]
-
-    def build_model(self, hp):
-        units = hp.Int("units", min_value=32, max_value=512, step=32)
-        activation = hp.Choice("activation", ["relu", "tanh"])
-        dropout = hp.Boolean("dropout")
-        lr = hp.Float("lr", min_value=1e-4, max_value=1e-2, sampling="log")
-        state_size = self.x_train.shape[1]
-        action_size = self.y_train.shape[1]
-        model = Sequential()
-        model.add(Dense(24, input_dim=state_size, activation="relu"))
-        model.add(Dense(units=units, activation=activation))
-        if dropout:
-            model.add(Dropout(rate=0.25))
-        model.add(Dense(action_size, activation="sigmoid"))
-
-        model.compile(
-            optimizer=Adam(learning_rate=lr), loss="mse", metrics=["accuracy"]
-        )
-        return model
-
-    def run_tuner(self, epochs=100, objective="val_accuracy"):
-        self.tuner = Hyperband(
-            self.build_model,
-            objective=objective,
-            max_epochs=epochs,
-            factor=3,
-            directory="logs",
-            project_name="defraud",
-        )
-
-        self.tuner.search_space_summary()
-        self.tuner.search(self.x_train, self.y_train, epochs=epochs, verbose=1)
-
-        best_model = self.tuner.get_best_models(num_models=1)[0]
-        best_hyperparameters = self.tuner.get_best_hyperparameters(num_models=1)[0]
-        print("Best Hyperparameters:", best_hyperparameters.values)
-        return best_model
+# class MyHyperModel(HyperModel):
+#    def __init__(self, x_train, y_train):
+#        self.x_train = x_train
+#        self.y_train = y_train
+#        # self.loss = LOSS[loss]
+#
+#    def build_model(self, hp):
+#        units = hp.Int("units", min_value=32, max_value=512, step=32)
+#        activation = hp.Choice("activation", ["relu", "tanh"])
+#        dropout = hp.Boolean("dropout")
+#        lr = hp.Float("lr", min_value=1e-4, max_value=1e-2, sampling="log")
+#        state_size = self.x_train.shape[1]
+#        action_size = self.y_train.shape[1]
+#        model = Sequential()
+#        model.add(Dense(24, input_dim=state_size, activation="relu"))
+#        model.add(Dense(units=units, activation=activation))
+#        if dropout:
+#            model.add(Dropout(rate=0.25))
+#        model.add(Dense(action_size, activation="sigmoid"))
+#
+#        model.compile(
+#            optimizer=Adam(learning_rate=lr), loss="mse", metrics=["accuracy"]
+#        )
+#        return model
+#
+#    def run_tuner(self, epochs=100, objective="val_accuracy"):
+#        self.tuner = Hyperband(
+#            self.build_model,
+#            objective=objective,
+#            max_epochs=epochs,
+#            factor=3,
+#            directory="logs",
+#            project_name="defraud",
+#        )
+#
+#        self.tuner.search_space_summary()
+#        self.tuner.search(self.x_train, self.y_train, epochs=epochs, verbose=1)
+#
+#        best_model = self.tuner.get_best_models(num_models=1)[0]
+#        best_hyperparameters = self.tuner.get_best_hyperparameters(num_models=1)[0]
+#        print("Best Hyperparameters:", best_hyperparameters.values)
+#        return best_model
