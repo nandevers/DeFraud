@@ -5,15 +5,17 @@ import plotly.graph_objs as go
 from dash import Input, Output, dcc, html
 from gym_insurance.envs.insurenv import InsurEnv
 
-VALUE_COLUMN = "valor_indenização"
+VALUE_COLUMN = "valor_indenizacao"
 BUDGET = 99999999
 
 
-train_data = pd.read_csv("../../data/processed/psr_train_set.csv")
-train_data = train_data.query("valor_indenização!=1147131.5")
+train_data = pd.read_csv("data/processed/psr_train_set.csv")
+train_data = train_data.query("valor_indenizacao!=1147131.5")
 
-test_data = pd.read_csv("../../data/processed/psr_test_set.csv")
-test_data = test_data.query("valor_indenização!=1147131.5")
+test_data = pd.read_csv("data/processed/psr_test_set.csv")
+test_data = test_data.query("valor_indenizacao!=1147131.5")
+
+train_data.query("valor_indenizacao==valor_indenizacao").iloc[0]
 
 state_columns = train_data.columns[5:-1]
 env = InsurEnv(train_data, VALUE_COLUMN, state_columns, BUDGET)
@@ -45,6 +47,7 @@ app.layout = html.Div(
         ),
     ]
 )
+
 
 # Define the callback function to update the rewards plot
 @app.callback(

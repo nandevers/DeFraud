@@ -10,6 +10,7 @@ class CumulativeCountEncoder:
         return self
 
     def transform(self, X, y=None):
+        # X[self.sort_col] = pd.to_datetime(X[self.sort_col], dayfirst=True)
         X[f"nr_previous_{self.sort_col}"] = (
             X.sort_values(self.sort_col)
             .groupby(self.group_by_cols)[self.sort_col]
@@ -30,13 +31,13 @@ class CumulativeEncoder:
         return self
 
     def transform(self, X, y=None):
+        X = X.sort_values(self.sort_col)
         fn = {"max": self._cum_max, "min": self._cum_min, "sum": self._cum_sum}
         if filter(["max", "min", "sum"], self.operation) is None:
             raise ValueError(
                 "Invalid operation. Only 'max', 'min', 'sum' are supported."
             )
         if isinstance(self.operation, list):
-            cols = X.columns
             return pd.concat([fn[o](X) for o in self.operation], axis=1)
         return fn[self.operation](X)
 

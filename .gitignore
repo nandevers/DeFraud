@@ -128,7 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
-# tensorboard
-logs
-models
+*.parquet
+*.csv
+logs/
+gym_insurance/
+backup/

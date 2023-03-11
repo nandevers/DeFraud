@@ -1,8 +1,8 @@
 import pandas as pd
 
 
-PRD_DATA = "data/processed/psrdadosabertos2006a2015csv.csv"
-PRD_SAMPLE_DATA = "data/processed/psr_sample.csv"
+PRD_DATA = "data/processed/full_psr_dados_abertos.csv"
+PRD_SAMPLE_DATA = "data/processed/psr_soja_pr_sample.csv"
 
 
 if __name__ == "__main__":

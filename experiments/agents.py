@@ -23,11 +23,11 @@ class DQNAgent:
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.target_update_counter = 0
-        self.tensorboard = ModifiedTensorBoard(
-            log_dir="logs/{}-{}".format(MODEL_NAME, int(time.time()))
-        )
+#        self.tensorboard = ModifiedTensorBoard(
+#            log_dir="logs/{}-{}".format(MODEL_NAME, int(time.time()))
+#        )
         self.model = model
-        self.tensorboard.set_model(model)
+#        self.tensorboard.set_model(model)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -40,10 +40,10 @@ class DQNAgent:
 
     def replay(self, batch_size):
         # Start training only if certain number of samples is already saved
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(
-            log_dir="logs/{}-{}/loss".format(MODEL_NAME, int(time.time())),
-            histogram_freq=1,
-        )
+#        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+#            log_dir="logs/{}-{}/loss".format(MODEL_NAME, int(time.time())),
+#            histogram_freq=1,
+#        )
         if len(self.memory) < batch_size:
             return
         minibatch = random.sample(self.memory, batch_size)
@@ -60,7 +60,7 @@ class DQNAgent:
                 target_f,
                 batch_size=batch_size,
                 verbose=1,
-                callbacks=[tensorboard_callback]
+                # callbacks=[tensorboard_callback]
                 #        callbacks=[self.tensorboard],
             )
         if self.epsilon > self.epsilon_min:
@@ -126,13 +126,13 @@ class DQNAgent:
                 )
                 if done:
                     self.target_update_counter += 1
-                    try:
-                        self.tensorboard.update_stats(
-                            step=i,
-                            loss=self.model.history.history["loss"],
-                        )
-                    except:
-                        pass
+#                    try:
+#                        self.tensorboard.update_stats(
+#                            step=i,
+#                            loss=self.model.history.history["loss"],
+#                        )
+#                    except:
+#                        pass
 
     def transform(self, data):
         self.env.reset()
@@ -143,3 +143,12 @@ class DQNAgent:
         return np.reshape(values, [1, data.shape[1]])
         # assert data.shape[1] == self.state_size
         # return self.predict(new_data=data)
+
+
+class RandomAgent:
+    def __init__(self, env):
+        self.env = env
+        self.env.reset()
+
+    def act(self):
+        return self.env.action_space.sample()

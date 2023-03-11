@@ -1,18 +1,32 @@
 import numpy as np
 import pandas as pd
+
+from experiments.agents import RandomAgent
 from gym_insurance.envs.insurenv import InsurEnv
 
-VALUE_COLUMN = "valor_indenização"
-BUDGET = 99999999
+VALUE_COLUMN = "valor_indenizacao"
+BUDGET = 9999999
 
 
-train_data = pd.read_csv("../../data/processed/psr_train_set.csv")
-train_data = train_data.query("valor_indenização!=1147131.5")
+train_data = pd.read_csv("data/processed/psr_train_set.csv")
+train_data = train_data.query("valor_indenizacao!=1147131.5")
+train_data = train_data.query("valor_indenizacao==valor_indenizacao")
 
-state_columns = train_data.columns[5:-1]
-env = InsurEnv(train_data, VALUE_COLUMN, state_columns, BUDGET)
-env.reset()
+state_columns = train_data.columns[5:]
+env = InsurEnv(
+    data=train_data,
+    index_column="id_proposta",
+    value_column=VALUE_COLUMN,
+    state_columns=state_columns,
+    budget=BUDGET,
+)
+train_data["id_proposta"]
+state = env.reset()
+done = False
+agent = RandomAgent(env)
 while not env.done:
-    action = np.random.randint(0, 2)
-    observation, reward, done, info = env.step(action)
-    print(reward, action)
+    action = agent.act()
+    state, reward, done, info = env.step(action)
+env.results.columns.to_list()
+env.results.to_parquet(f"data/model_results/_parquet/random_{BUDGET}_results.parquet")
+env.results.to_csv(f"data/model_results/_csv/random_{BUDGET}_results.csv", index=False)

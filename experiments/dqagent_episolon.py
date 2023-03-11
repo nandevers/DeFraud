@@ -17,8 +17,8 @@ tensorboard = ModifiedTensorBoard(
 
 
 data = pd.read_csv("../../data/processed/psr_train_set.csv")
-data = data.query("valor_indenização!=1147131.5")
-value_column = "valor_indenização"
+data = data.query("valor_indenizacao!=1147131.5")
+value_column = "valor_indenizacao"
 state_columns = data.columns[5:-1]
 budget = 1000000
 env = InsurEnv(data, value_column, state_columns, budget)
@@ -65,7 +65,6 @@ for e in range(EPISODES):
 
             # Save model, but only when min reward is greater or equal a set value
             if min_reward >= MIN_REWARD:
-
                 agent.model.save(
                     f"logs/models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model"
                 )
@@ -77,19 +76,3 @@ for e in range(EPISODES):
                 break
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
-
-
-from seaborn import histplot
-from matplotlib import pyplot as plt
-import tensorflow as tf
-
-with env.tensorboard.writer.as_default():
-    histplot(env.results, x="valor_indenização", hue="decision")
-    plt.show()
-    x = env.results.query("decision==1")["valor_indenização"].values
-    tf.summary.histogram("Approved", x, step=env.episodes, description="Appoved Values")
-
-    x = env.results.query("decision==0")["valor_indenização"].values
-    tf.summary.histogram(
-        "Rejected", x, step=env.episodes, description="Rejected Values"
-    )

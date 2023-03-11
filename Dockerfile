@@ -1,22 +1,19 @@
-# Use a base image with Python 3.11
 FROM python:3.11
 
-# Set the working directory in the container
-WORKDIR /app
+RUN mkdir DeFraud
+ADD data /DeFraud/data
 
-# Copy the requirements.txt file to the container
-COPY requirements.txt /app/requirements.txt
+# Create a directory called DeFraud and set it as the working directory
+WORKDIR /DeFraud
+
+# Copy all files in the current directory into the container's working directory
+COPY preprocessing /DeFraud/preprocessing
+COPY feature_engineering /DeFraud/feature_engineering
+COPY requirements.txt /DeFraud/
+
+VOLUME [ "/data" ]
 
 # Install the required packages
 RUN pip install -r requirements.txt
 
-# Copy the rest of the app code to the container
-COPY /app /app
-COPY /data /data
-
-
-# Expose port 8501 to run the Streamlit app
-EXPOSE 8501
-
-# Set the entrypoint to start Streamlit
-ENTRYPOINT ["streamlit", "run", "app.py","--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT [ "/bin/bash" ]
