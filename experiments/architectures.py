@@ -4,6 +4,7 @@ from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.wrappers.scikit_learn import KerasClassifier
 
+
 # from kerastuner import Hyperband, HyperParameter, HyperModel
 # from sklearn.model_selection import KFold, cross_val_score
 
@@ -26,13 +27,13 @@ LOSS = {k: k for k in loss_functions}
 def build_baseline_model(state_size, action_size, learning_rate):
     # Neural Net for Deep-Q learning Model
     model = Sequential()
-    model.add(Dense(24, input_dim=state_size, activation="relu"))
-    model.add(Dense(24, activation="relu"))
+    model.add(Dense(24, input_dim=state_size, activation="linear"))
+    model.add(Dropout(0.25))
+    model.add(Dense(128, activation="relu"))
     model.add(Dense(action_size, activation="linear"))
     model.compile(
-        loss="mse",
+        loss="categorical_crossentropy",
         optimizer=Adam(learning_rate=learning_rate),
-        metrics=["accuracy"],
     )
     return model
 

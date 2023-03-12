@@ -39,7 +39,6 @@ STD_COLS = [
     "sum_vl_limite_garantia",
 ]
 
-
 st.set_page_config(layout="wide")
 
 

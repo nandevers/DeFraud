@@ -1,70 +1,140 @@
 import random
-import time
+
 import tensorflow as tf
 from collections import deque
 from tensorflow.python.framework.errors_impl import InvalidArgumentError
 import numpy as np
 import tqdm
-from gym_insurance.envs.utils import ModifiedTensorBoard
 
 MODEL_NAME = "br_crop_insurance"
+UPDATE_TARGET_EVERY = 5
+MIN_MEMORY = 200
+MEMORY_SIZE = 4000
+
+np.random.seed(1)
+random.seed(1)
 
 
 class DQNAgent:
-    def __init__(self, env, model):
+    def __init__(
+        self,
+        env,
+        model,
+        memory_size=MEMORY_SIZE,
+        gamma=0.95,
+        epsilon=1.0,
+        epsilon_min=0.001,
+        epsilon_decay=0.995,
+    ):
         self.env = env
         self.env.reset()
         self.state_size = env.observation_space.shape[0]
         self.action_size = env.action_space.n
-        self.memory = deque(maxlen=2000)
-        self.gamma = 0.95  # discount rate
-        self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.learning_rate = 0.001
+
+        self.memory = deque(maxlen=MEMORY_SIZE)
+        self.gamma = gamma  # discount rate
+        self.epsilon = epsilon  # exploration rate
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
         self.target_update_counter = 0
-#        self.tensorboard = ModifiedTensorBoard(
-#            log_dir="logs/{}-{}".format(MODEL_NAME, int(time.time()))
-#        )
         self.model = model
-#        self.tensorboard.set_model(model)
+
+        # Target network
+        self.target_model = model
+        self.target_model.set_weights(self.model.get_weights())
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
+    def get_qs(self, state):
+        if state.sum() == 0 and state.shape == (self.state_size,):
+            state = state.reshape(1, self.state_size)
+        return self.model.predict(state)[0]
+
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
-        return np.argmax(act_values[0])
+        act_values = self.get_qs(state)
+        return np.argmax(act_values)
 
-    def replay(self, batch_size):
-        # Start training only if certain number of samples is already saved
-#        tensorboard_callback = tf.keras.callbacks.TensorBoard(
-#            log_dir="logs/{}-{}/loss".format(MODEL_NAME, int(time.time())),
-#            histogram_freq=1,
-#        )
-        if len(self.memory) < batch_size:
+    # FIXME: shouldnt this be train instead?
+    def replay(self, batch_size, terminal_state, step):
+        assert batch_size < MIN_MEMORY
+        if len(self.memory) < MIN_MEMORY:
             return
+
         minibatch = random.sample(self.memory, batch_size)
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
+        current_states = np.array(
+            [
+                transition[0].reshape(self.state_size, 1).transpose()
+                for transition in minibatch
+            ]
+        )
+        current_states = np.concatenate(current_states, axis=0)
+        current_qs_list = self.model.predict(current_states)
+        new_current_states = np.array(
+            [
+                transition[3].reshape(self.state_size, 1).transpose()
+                for transition in minibatch
+            ]
+        )
+        new_current_states = np.concatenate(new_current_states, axis=0)
+        future_qs_list = self.target_model.predict(new_current_states)
+
+        X = []
+        y = []
+        # Now we need to enumerate our batches
+        for index, (
+            current_state,
+            action,
+            reward,
+            new_current_state,
+            done,
+        ) in enumerate(minibatch):
+            # If not a terminal state, get new q from future states, otherwise set it to 0
+            # almost like with Q Learning, but we use just part of equation here
+            if reward is None:
+                reward = 0
+
             if not done:
-                target = reward + self.gamma * np.amax(
-                    self.model.predict(next_state)[0]
-                )
-            target_f = self.model.predict(state)
-            target_f[0][action] = target
-            self.model.fit(
-                state,
-                target_f,
-                batch_size=batch_size,
-                verbose=1,
-                # callbacks=[tensorboard_callback]
-                #        callbacks=[self.tensorboard],
-            )
+                max_future_q = np.max(future_qs_list[index])
+                new_q = reward + self.gamma * max_future_q
+            else:
+                new_q = reward
+
+            # Update Q value for given state
+            current_qs = current_qs_list[index]
+            current_qs[action] = new_q
+
+            # And append to our training data
+            X.append(current_state.reshape(self.state_size, 1).transpose())
+            X_ = np.concatenate(X, axis=0)
+            y.append(current_qs.reshape(self.action_size, 1).transpose())
+            y_ = np.concatenate(y, axis=0)
+
+        # Fit on all samples as one batch, log only on terminal state
+        self.model.fit(
+            X_,
+            y_,
+            #            np.array(X),
+            #            np.array(y),
+            batch_size=batch_size,
+            verbose=1,
+            shuffle=False,
+        )
+
+        # Update target network counter every episode
+        if terminal_state:
+            self.target_update_counter += 1
+
+        # If counter reaches set value, update target network with weights of main network
+        if self.target_update_counter > UPDATE_TARGET_EVERY:
+            self.target_model.set_weights(self.model.get_weights())
+            self.target_update_counter = 0
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+            self.epsilon = max(self.epsilon_min, self.epsilon)
 
     def predict(self, new_data):
         """
@@ -101,48 +171,6 @@ class DQNAgent:
         self.env.reset()
         action = self.act(self._shape_state)
         return self._shape_state, action
-
-    def fit(self, episodes, min_replay_memory_size, min_reward, batch_size):
-        assert min_replay_memory_size > 2
-        for i in tqdm.tqdm(range(1, episodes + 1), ascii=True, unit="episodes"):
-            self.env.reset()
-            self.min_replay_memory_size = min_replay_memory_size
-            state, action = self._get_sa
-            while not self.env.done:
-                action = self.act(state)
-                next_state, reward, done, _ = self.env.step(action)
-                next_state = self._shape_state
-                self.remember(state, action, reward, next_state, done)
-                self.replay(batch_size)
-
-                # Update target network counter every episode
-                self.tensorboard.update_stats(
-                    step=i,
-                    reward=sum(self.env.rewards),
-                    min_reward=min(self.env.rewards),
-                    approved_pct=self.env.approved_pct,
-                    budget_pct=self.env.budget.pct_budget,
-                    # loss = self.model.history.history["loss"],
-                )
-                if done:
-                    self.target_update_counter += 1
-#                    try:
-#                        self.tensorboard.update_stats(
-#                            step=i,
-#                            loss=self.model.history.history["loss"],
-#                        )
-#                    except:
-#                        pass
-
-    def transform(self, data):
-        self.env.reset()
-        self.test_data = data
-        for i in data.iterrows():
-            values = list(i) + [self.env.pct_budget, self.env.approved / self.env.steps]
-
-        return np.reshape(values, [1, data.shape[1]])
-        # assert data.shape[1] == self.state_size
-        # return self.predict(new_data=data)
 
 
 class RandomAgent:

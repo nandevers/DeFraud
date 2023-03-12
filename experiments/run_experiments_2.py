@@ -32,10 +32,6 @@ model.summary()
 dqagent = DQNAgent(env, model)
 dqagent.fit(episodes=30, min_replay_memory_size=150, min_reward=3, batch_size=100)
 
-dqagent.env.results.to_csv(
-    dqagent.tensorboard.log_dir + "/train_results.csv", index=False
-)
-
 
 results = []
 for i, j in enumerate(test_data[dqagent.env.state_columns].iterrows()):
@@ -57,6 +53,3 @@ for i, j in enumerate(test_data[dqagent.env.state_columns].iterrows()):
         break
 dqagent.env.results
 dqagent.env.steps
-test_data.query("decisions == decisions").to_csv(
-    dqagent.tensorboard.log_dir + "/test_results.csv", index=False
-)

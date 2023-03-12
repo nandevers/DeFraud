@@ -5,15 +5,10 @@ from gym_insurance.envs.insurenv import InsurEnv
 from agents import DQNAgent
 
 # from experiments.agents import DQNAgent
-from gym_insurance.envs.utils import ModifiedTensorBoard
 
 
 AGGREGATE_STATS_EVERY = 5
 MODEL_NAME = "br_crop_insurance"
-
-tensorboard = ModifiedTensorBoard(
-    log_dir="logs/{}-{}".format(MODEL_NAME, int(time.time()))
-)
 
 
 data = pd.read_csv("../../data/processed/psr_train_set.csv")
@@ -39,22 +34,10 @@ for e in range(EPISODES):
         # env.render()
         action = agent.act(state)
         next_state, reward, done, _ = env.step(action)
-        print(env.results)
         reward = reward if not done else -10
         next_state = np.reshape(next_state, [1, env.observation_space.shape[0]])
         agent.remember(state, action, reward, next_state, done)
         state = next_state
-
-        # tensorboard.set_model(agent.model)
-        agent.tensorboard.update_stats(
-            step=t,
-            reward_avg=average_reward,
-            reward_min=min_reward,
-            reward_max=max_reward,
-            approved_pct=env.approved_pct,
-            pct_budget=env.budget.pct_budget,
-            epsilon=agent.epsilon,
-        )
 
         if done:
             average_reward = sum(env.rewards[-AGGREGATE_STATS_EVERY:]) / len(
