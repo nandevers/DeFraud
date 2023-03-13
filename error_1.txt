@@ -1,0 +1,53 @@
+Traceback (most recent call last):
+  File "C:\Repos\DeFraud\experiments\dqn_experiment.py", line 50, in <module>
+    agent.replay(batch_size, done, env.steps)
+  File "c:\repos\defraud\experiments\agents.py", line 70, in replay
+    future_qs_list = self.target_model.predict(new_current_states)
+  File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\utils\traceback_utils.py", line 70, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\tensorflow\python\eager\execute.py", line 54, in quick_execute
+    tensors = pywrap_tfe.TFE_Py_Execute(ctx._handle, device_name, op_name,
+tensorflow.python.framework.errors_impl.InvalidArgumentError: Graph execution error:
+
+Detected at node 'sequential/dense/Relu' defined at (most recent call last):
+    File "C:\Repos\DeFraud\experiments\dqn_experiment.py", line 50, in <module>
+      agent.replay(batch_size, done, env.steps)
+    File "c:\repos\defraud\experiments\agents.py", line 70, in replay
+      future_qs_list = self.target_model.predict(new_current_states)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\utils\traceback_utils.py", line 65, in error_handler
+      return fn(*args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\training.py", line 2253, in predict
+      tmp_batch_outputs = self.predict_function(iterator)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\training.py", line 2041, in predict_function
+      return step_function(self, iterator)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\training.py", line 2027, in step_function
+      outputs = model.distribute_strategy.run(run_step, args=(data,))
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\training.py", line 2015, in run_step
+      outputs = model.predict_step(data)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\training.py", line 1983, in predict_step
+      return self(x, training=False)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\utils\traceback_utils.py", line 65, in error_handler
+      return fn(*args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\training.py", line 557, in __call__
+      return super().__call__(*args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\utils\traceback_utils.py", line 65, in error_handler
+      return fn(*args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\base_layer.py", line 1097, in __call__
+      outputs = call_fn(inputs, *args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\utils\traceback_utils.py", line 96, in error_handler
+      return fn(*args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\sequential.py", line 410, in call
+      return super().call(inputs, training=training, mask=mask)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\functional.py", line 510, in call
+      return self._run_internal_graph(inputs, training=training, mask=mask)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\engine\functional.py", line 667, in _run_internal_graph
+      outputs = node.layer(*args, **kwargs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\layers\core\dense.py", line 255, in call
+      outputs = self.activation(outputs)
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\activations.py", line 317, in relu
+      return backend.relu(
+    File "C:\Users\nande\miniconda3\envs\DeFraud\lib\site-packages\keras\backend.py", line 5366, in relu
+      x = tf.nn.relu(x)
+Node: 'sequential/dense/Relu'
+In[0] is not a matrix
+         [[{{node sequential/dense/Relu}}]] [Op:__inference_predict_function_301]

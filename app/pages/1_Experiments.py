@@ -2,13 +2,15 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from benfordslaw import benfordslaw as bf
+
+from gym_insurance.envs.benford import Benford
 from chart_utils import rewards_line_plot
 import numpy as np
 
 st.title("Experiments")
 
 
-@st.cache_data
+@st.cache_resource
 def read_results(strategy="random"):
     return (
         pd.read_parquet(f"data/model_results/{strategy}/_parquet/")
@@ -85,9 +87,9 @@ def results_by_decision(model_strategy, decision=None):
 
 
 def bf_analysis(d=1):
-    overall = bf(alpha=0.5)
-    approved = bf(alpha=0.5)
-    rejected = bf(alpha=0.5)
+    overall =  bf(d)
+    approved = bf(d)
+    rejected = bf(d)
 
     overall.fit(results_by_decision(model_strategy, None))
     approved.fit(results_by_decision(model_strategy, 1))
@@ -96,7 +98,6 @@ def bf_analysis(d=1):
 
 
 def plot_benford(d=1):
-    overall, approved, rejected = bf_analysis()
     overall, approved, rejected = bf_analysis()
     overall_fig, _ = overall.plot()
     approved_fig, _ = approved.plot()
@@ -114,10 +115,7 @@ def melt_benford(d=1):
 
 
 with dqn_tab:
-    st.cache_resource.clear()
-
     model_strategy = "baseline"
-    st.write("A random strategy applied to the environment ")
     results = (
         read_results(model_strategy)
         .loc[:, ["episodes", "steps", "rewards", "budget"]]
@@ -130,64 +128,87 @@ with dqn_tab:
             options=results.episodes.unique(),
         )
 
-    st.plotly_chart(px.line(results.query('episodes > 20'), x="steps", y="rewards", color="episodes"))
+    if st.button("Clear All"):
+        # Clears all st.cache_resource caches:
+        st.cache_resource.clear()
 
 
+    st.plotly_chart(
+        px.line(results.query("episodes>0"), x="steps", y="rewards", color="episodes")
+    )
+
+    st.markdown("Approved /  Rejected by Esisode: Total and Monetary Values")
+    rewards_summary = (
+        read_results(model_strategy)
+        .groupby("episodes")["rewards"]
+        .agg(["min", "mean", "max", "sum", "std", "count"])
+        .reset_index()
+    )
+    rewards_summary["cum_sum"] = rewards_summary["sum"].cumsum()
+    st.dataframe(rewards_summary.sort_values('sum', ascending=False))
+    st.plotly_chart(px.line(data_frame=rewards_summary, x="episodes", y="cum_sum"))
 
     st.dataframe(
         read_results(model_strategy).pivot_table(
             index="episodes",
-            columns="decision",
-            values="valor_indenizacao",
-            aggfunc=["count", 'sum'],
-        )
-    )
-
-    rewards_summary = read_results(model_strategy).groupby("episodes")["rewards"].agg(["min", "mean", "max", "sum", "std", "count"]).reset_index()
-    rewards_summary['cum_sum']  =rewards_summary['sum'].cumsum()
-
-    st.dataframe(
-        rewards_summary
-    )
-
-    st.plotly_chart(px.line(data_frame = rewards_summary, x  = 'episodes', y = 'cum_sum'))
-    
-
-    st.dataframe(
-        read_results(model_strategy).pivot_table(
-            index="episodes",
-            values="steps",
+            values="decision",
             aggfunc=["min", "mean", "max", "std", "count"],
-        )
+        ).reset_index()
     )
 
     max_reward = read_results(model_strategy).rewards.max()
     st.metric(label="Max Reward", value=np.round(max_reward))
 
+    with st.expander("Open to see results"):
+        st.dataframe(
+            # read_results(model_strategy).groupby(["episodes", "decision"])['valor_indenizacao'].apply(lambda x: list(Benford(3).chi_test(x)))
+            read_results(model_strategy).pivot_table(
+                index="episodes",
+                columns="decision",
+                values="valor_indenizacao",
+                aggfunc=lambda x: any(Benford(1).chi_test(x)),
+            )
+        )
 
     st.markdown("### Analysis of Digits with Benford's Distribution")
     bf_dist = melt_benford().melt().reset_index()
-    st.plotly_chart(px.bar(bf_dist, x=bf_dist["index"], y="value", color="variable"),use_container_width=True)
+    st.plotly_chart(
+        px.bar(bf_dist, x=bf_dist["index"], y="value", color="variable"),
+        use_container_width=True,
+    )
 
     overall, approved, rejected = plot_benford()
     col1, col2, col3 = st.columns(3)
+    
+
 
     o, a, r = bf_analysis()
     with col1:
+        decision = None
         st.header("Overall")
-        st.pyplot(overall)
-        st.write(o)
+        st.write(o.results["P_significant"])
+        p1, p2, p3 = Benford(3).plot(results_by_decision(model_strategy, decision=decision))
+        st.pyplot(p1)
+        st.pyplot(p2)
+        st.pyplot(p3)
 
     with col2:
+        decision = 1
         st.header("Approved")
-        st.pyplot(approved)
-        st.write(a)
+        st.write(a.results["P_significant"])
+        p1, p2, p3 = Benford(3).plot(results_by_decision(model_strategy, decision=decision))
+        st.pyplot(p1)
+        st.pyplot(p2)
+        st.pyplot(p3)
+ 
 
     with col3:
+        decision = 0
         st.header("Rejected")
-        st.pyplot(rejected)
-        st.write(r)
+        st.write(r.results["P_significant"])
+        p1, p2, p3 = Benford(3).plot(results_by_decision(model_strategy, decision=decision))
+        st.pyplot(p1)
+        st.pyplot(p2)
+        st.pyplot(p3)
 
-    with st.expander("Open to see results"):
-        st.dataframe(results)
 

@@ -1,0 +1,51 @@
+Metrics:
+
+Ambiente:
+
+Average time by step.
+
+
+DQN Agent
+# of episodes with successful anomaly detection of rejected cases
+P of Benford distribution for each episode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ambiente:
+
+Função de recompensa dada por....
+Distancia utilizada, norm2
+
+
+
+Modelo Sequencial:
+Agente DQN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

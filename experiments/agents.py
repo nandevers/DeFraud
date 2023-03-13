@@ -8,7 +8,7 @@ import tqdm
 
 MODEL_NAME = "br_crop_insurance"
 UPDATE_TARGET_EVERY = 5
-MIN_MEMORY = 200
+MIN_MEMORY = 500
 MEMORY_SIZE = 4000
 
 np.random.seed(1)

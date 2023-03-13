@@ -5,27 +5,27 @@ from gym_insurance.envs.insurenv import InsurEnv
 from experiments.agents import DQNAgent
 from experiments.architectures import build_baseline_model
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 data = pd.read_csv("data/processed/psr_train_set.csv").query(
     "valor_indenizacao==valor_indenizacao"
 )
-#data["first_digit"] = data["valor_indenizacao"].astype(str).str[0]
-#data["first_digit"] = data["first_digit"].astype(int)
-#data["second_digit"] = (
+# data["first_digit"] = data["valor_indenizacao"].astype(str).str[0]
+# data["first_digit"] = data["first_digit"].astype(int)
+# data["second_digit"] = (
 #    data["valor_indenizacao"].astype(str).replace("\.", "", regex=True).str[1]
-#)
-#data["second_digit"] = data["second_digit"].astype(int)
+# )
+# data["second_digit"] = data["second_digit"].astype(int)
 
 value_column = "valor_indenizacao"
-state_columns = data.columns.to_list()[5:-1] #+ ["first_digit", "second_digit"]
+state_columns = data.columns.to_list()[5:-1]  # + ["first_digit", "second_digit"]
 env = InsurEnv(
     data=data,
     index_column="id_proposta",
     value_column=value_column,
     state_columns=state_columns,
-    budget=999999*5,
+    budget=9999999,
 )
-batch_size = 100  # Pick from 1 to 1000
+batch_size = 300  # Pick from 1 to 1000
 EPISODES = 500
 
 model = build_baseline_model(
