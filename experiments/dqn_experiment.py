@@ -9,10 +9,11 @@ MODEL_NAME = "br_crop_insurance"
 UPDATE_TARGET_EVERY = 5
 MIN_MEMORY = 1000
 MEMORY_SIZE = 4000
-batch_size = 300
+batch_size = 150
 EPISODES = 100
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.05
 UPDATE_TARGET_EVERY = 10
+BUDGET = 50_000_000
 
 data = pd.read_csv("data/processed/psr_train_set.csv").query(
     "valor_indenizacao==valor_indenizacao"
@@ -25,7 +26,7 @@ env = InsurEnv(
     index_column="id_proposta",
     value_column=value_column,
     state_columns=state_columns,
-    budget=999999*5,
+    budget= BUDGET,
 )
 
 model = build_baseline_model(
@@ -69,9 +70,9 @@ for e in range(1, EPISODES + 1):
     model_results_file_name = f"dqnagent_base_line_{LEARNING_RATE}"
 
     model_results.to_parquet(
-        f"data/model_results/baseline/_parquet/{model_results_file_name}_{batch_size}_results.parquet"
+        f"data/model_results/baseline/_parquet/{model_results_file_name}_{batch_size}_{BUDGET}_results.parquet"
     )
     model_results.to_csv(
-        f"data/model_results/baseline/_csv/{model_results_file_name}_{batch_size}_results.csv",
+        f"data/model_results/baseline/_csv/{model_results_file_name}_{batch_size}_{BUDGET}_results.csv",
         index=False,
     )

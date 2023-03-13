@@ -38,6 +38,18 @@ def results_by_decision(model_strategy, decision=None):
 def read_cols(strategy="random"):
     return read_results(strategy=strategy).columns.to_list()
 
+
+
+def summarize_metric(model_strategy = 'random', col="rewards"):
+    rewards_summary = (
+        read_results(model_strategy)
+        .groupby("episodes")[col]
+        .agg(["min", "mean", "max", "sum", "std", "count"])
+        .reset_index()
+    )
+    rewards_summary["cum_sum"] = rewards_summary["sum"].cumsum()
+    return rewards_summary
+
 def bf_analysis(d=1):
     overall =  bf(d)
     approved = bf(d)
@@ -146,6 +158,7 @@ with dqn_tab:
     )
 
     st.markdown("Approved /  Rejected by Esisode: Total and Monetary Values")
+
     rewards_summary = (
         read_results(model_strategy)
         .groupby("episodes")["rewards"]
@@ -153,21 +166,11 @@ with dqn_tab:
         .reset_index()
     )
     rewards_summary["cum_sum"] = rewards_summary["sum"].cumsum()
-    st.dataframe(rewards_summary.sort_values("sum", ascending=False))
+
+    st.session_state.summary_col = st.selectbox('Select a column', ('rewards', 'steps', 'budget', 'decision'))
+    st.dataframe(summarize_metric(model_strategy,st.session_state.summary_col).sort_values("sum", ascending=False))
     st.plotly_chart(px.line(data_frame=rewards_summary, x="episodes", y="cum_sum"))
 
-
-    ##
-    st.dataframe(
-        read_results(model_strategy)
-        .pivot_table(
-            index="episodes",
-            values = 'id_proposta',
-            columns="decision",
-            aggfunc=["count"],
-        )
-        .reset_index()
-    )
 
     max_reward = read_results(model_strategy).rewards.max()
     st.metric(label="Max Reward", value=np.round(max_reward))
