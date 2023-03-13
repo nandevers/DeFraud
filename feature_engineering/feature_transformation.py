@@ -5,9 +5,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 PRD_SAMP_FEAT_DATA = "data/processed/psr_sampled_features.csv"
 data = pd.read_csv(PRD_SAMP_FEAT_DATA)
-data.shape
-data.columns
-CUTOFF_YEAR = "2020"
+CUTOFF_YEAR = "2021"
 
 ID_COLS = [
     "nr_documento_segurado",
@@ -18,7 +16,7 @@ ID_COLS = [
 ]
 STD_COLS = [
     "valor_indenizacao",
-    # "nr_previous_['dt_proposta','id_proposta']",
+    "nr_previous_proposals",
     "max_nr_area_total",
     "min_nr_area_total",
     "sum_nr_area_total",
@@ -54,14 +52,14 @@ def handle_missing_values(data, method):
     return data
 
 
-def one_hot_encode(data):
+def one_hot_encode(data, feature):
     enc = OneHotEncoder(handle_unknown="infrequent_if_exist")
-    ep_train = data.loc[data.dt_proposta <= CUTOFF_YEAR, "evento_preponderante"]
-    ep = data["evento_preponderante"]
+    ep_train = data.loc[data.dt_proposta <= CUTOFF_YEAR, feature]
+    ep = data[feature]
     enc.fit(np.reshape(ep_train.values, (-1, 1)))
     ep_matrix = enc.transform(np.reshape(ep.values, (-1, 1))).toarray()
     ep_matrix = pd.DataFrame(ep_matrix)
-    ep_cols = [f"evento_preponderante_{c}" for c in ep_matrix.columns]
+    ep_cols = [f"{feature}_{c}" for c in ep_matrix.columns]
     ep_matrix.columns = ep_cols
     data = pd.concat([data, ep_matrix], axis=1)
     return data, ep_cols
@@ -77,13 +75,14 @@ def standard_scaler(data):
     return data, std_new_cols
 
 
-data[STD_COLS[1:]]
-
 data = handle_missing_values(data, "median")
-data, ep_cols = one_hot_encode(data)
+data, ep_cols = one_hot_encode(data,'evento_preponderante')
+data, fd_cols = one_hot_encode(data, 'first_digit')
+data, sd_cols = one_hot_encode(data, 'second_digit')
+data, td_cols = one_hot_encode(data, 'third_digit')
 data, std_cols = standard_scaler(data)
 
-cols_to_write = ID_COLS + std_cols + ep_cols + ["valor_indenizacao"]
+cols_to_write = ID_COLS + std_cols + ep_cols +fd_cols+ sd_cols+ td_cols+ ["valor_indenizacao"]
 data.loc[data.dt_proposta <= CUTOFF_YEAR, cols_to_write].to_csv(
     "data/processed/psr_train_set.csv", index=False
 )

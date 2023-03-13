@@ -59,11 +59,12 @@
     "value_columns": [
         "vl_subvencao_federal",
         "vl_premio_liquido",
+        "vl_limite_garantia",
+        "valor_indenizacao",
         "pe_taxa",
-        "nr_produtividade_segurada",
         "niveldecobertura",
         "nr_area_total",
-        "vl_limite_garantia",
-        "valor_indenizacao"
+        "nr_produtividade_segurada",
+        "nr_previous_proposals"
     ]
 }

@@ -51,17 +51,19 @@ def read_cols():
 
 ID = "nr_documento_segurado"
 
-sample = pd.read_csv("data/processed/psr_soja_pr_sample.csv")
+@st.cache
+def read_sample():
+    return pd.read_csv("data/processed/psr_soja_pr_sample.csv")
 
 
-@st.cache_data
+@st.cache_resource
 def read_features():
     return pd.read_csv("data/processed/psr_sampled_features.csv")
 
 
-@st.cache_data
+@st.cache_resource
 def read_tfeatures():
-    return pd.read_csv("data/processed/psr_train_and_test_set.csv")
+    return pd.read_csv("data/processed/psr_train_and_test_set.csv").query('valor_indenizacao==valor_indenizacao')
 
 
 def profile_features():
@@ -75,6 +77,7 @@ st.markdown(
 )
 
 with st.sidebar:
+    sample = read_sample()
     st.session_state.selected_id = st.selectbox(
         f"Select sample by {ID}",
         options=sample[ID].value_counts().sort_values(ascending=False).index,
@@ -82,6 +85,11 @@ with st.sidebar:
     st.session_state.feature = st.sidebar.selectbox(
         "Select feature:", sorted(sample.columns.to_list())
     )
+
+
+    if st.sidebar.button("Clear All"):
+        # Clears all st.cache_resource caches:
+        st.cache_resource.clear()
 
 
 raw_t, feature_t, tr_feature_t, results_t = st.tabs(
@@ -95,6 +103,8 @@ with raw_t:
         raw_cols = read_cols()["code_id_cols"]
         raw_cols.append("dt_proposta")
         st.dataframe(selected_case_raw_df[raw_cols])
+
+    
 
 with feature_t:
     if "selected_id" in st.session_state:

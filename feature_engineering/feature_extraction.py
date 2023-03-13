@@ -23,6 +23,7 @@ if __name__ == "__main__":
     )
     transformer.fit(data)
     data_transformed = transformer.transform(data)
+    data_transformed.rename(columns = {"nr_previous_['dt_proposta', 'id_proposta']": 'nr_previous_proposals'}, inplace=True)
     print(data_transformed.shape)
 
     # cumulative operation encoding
@@ -42,6 +43,9 @@ if __name__ == "__main__":
     data = pd.concat([data_transformed, tdata], axis=1)
     data = data.loc[:, ~data.columns.duplicated()]
     del tdata
+    data['first_digit']  = data['valor_indenizacao'].astype(str).str[0]
+    data['second_digit'] = data['valor_indenizacao'].astype(str).str[1]
+    data['third_digit']  = data['valor_indenizacao'].astype(str).str[2]
     # save to csv
     # TODO: change this to parquet
     data.to_csv(PRD_FEAT_DATA, index=False)

@@ -8,15 +8,7 @@ Average time by step.
 DQN Agent
 # of episodes with successful anomaly detection of rejected cases
 P of Benford distribution for each episode
-
-
-
-
-
-
-
-
-
+Consistency: same results accross different episodes
 
 
 

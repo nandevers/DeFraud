@@ -1,12 +1,13 @@
 import tensorflow as tf
-from keras.layers import BatchNormalization, Dense, Dropout
+from keras.layers import Dense, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras.wrappers.scikit_learn import KerasClassifier
-
 
 # from kerastuner import Hyperband, HyperParameter, HyperModel
 # from sklearn.model_selection import KFold, cross_val_score
+
+tf.random.set_seed(2)
+
 
 loss_functions = [
     "mse",
@@ -28,11 +29,11 @@ def build_baseline_model(state_size, action_size, learning_rate):
     # Neural Net for Deep-Q learning Model
     model = Sequential()
     model.add(Dense(24, input_dim=state_size, activation="linear"))
-    model.add(Dropout(0.25))
     model.add(Dense(128, activation="relu"))
+    model.add(Dropout(0.25))
     model.add(Dense(action_size, activation="linear"))
     model.compile(
-        loss="categorical_crossentropy",
+        loss="mae",
         optimizer=Adam(learning_rate=learning_rate),
     )
     return model

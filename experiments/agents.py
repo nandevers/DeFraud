@@ -1,18 +1,9 @@
 import random
-
-import tensorflow as tf
 from collections import deque
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
 import numpy as np
-import tqdm
 
-MODEL_NAME = "br_crop_insurance"
-UPDATE_TARGET_EVERY = 5
-MIN_MEMORY = 500
-MEMORY_SIZE = 4000
-
-np.random.seed(1)
-random.seed(1)
+np.random.seed(2)
+random.seed(2)
 
 
 class DQNAgent:
@@ -20,7 +11,9 @@ class DQNAgent:
         self,
         env,
         model,
-        memory_size=MEMORY_SIZE,
+        memory_size,
+        min_memory_size,
+        update_target_every,
         gamma=0.95,
         epsilon=1.0,
         epsilon_min=0.001,
@@ -30,8 +23,10 @@ class DQNAgent:
         self.env.reset()
         self.state_size = env.observation_space.shape[0]
         self.action_size = env.action_space.n
-
-        self.memory = deque(maxlen=MEMORY_SIZE)
+        self.update_target_every = update_target_every
+        self.memory_size = memory_size
+        self.min_memory_size = min_memory_size
+        self.memory = deque(maxlen=memory_size)
         self.gamma = gamma  # discount rate
         self.epsilon = epsilon  # exploration rate
         self.epsilon_min = epsilon_min
@@ -59,8 +54,8 @@ class DQNAgent:
 
     # FIXME: shouldnt this be train instead?
     def replay(self, batch_size, terminal_state, step):
-        assert batch_size < MIN_MEMORY
-        if len(self.memory) < MIN_MEMORY:
+        assert batch_size < self.memory_size
+        if len(self.memory) < self.min_memory_size:
             return
 
         minibatch = random.sample(self.memory, batch_size)
@@ -128,7 +123,7 @@ class DQNAgent:
             self.target_update_counter += 1
 
         # If counter reaches set value, update target network with weights of main network
-        if self.target_update_counter > UPDATE_TARGET_EVERY:
+        if self.target_update_counter > self.update_target_every:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 

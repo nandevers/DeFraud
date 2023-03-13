@@ -5,7 +5,7 @@ from experiments.agents import RandomAgent
 from gym_insurance.envs.insurenv import InsurEnv
 
 VALUE_COLUMN = "valor_indenizacao"
-BUDGET = 9999999
+BUDGET = [1000000, 5000000, 10000000, 15000000]
 
 
 train_data = pd.read_csv("data/processed/psr_train_set.csv")

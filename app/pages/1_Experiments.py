@@ -11,6 +11,13 @@ st.title("Experiments")
 
 
 @st.cache_resource
+def read_valor_indenizcao():
+    return pd.read_csv(
+        "data/processed/psr_sampled_features.csv", usecols=["valor_indenizacao"]
+    ).query("valor_indenizacao==valor_indenizacao")
+
+
+@st.cache_resource
 def read_results(strategy="random"):
     return (
         pd.read_parquet(f"data/model_results/{strategy}/_parquet/")
@@ -18,13 +25,49 @@ def read_results(strategy="random"):
         .drop_duplicates()
     )
 
+def results_by_decision(model_strategy, decision=None):
+    if decision is None:
+        return read_results(model_strategy).loc[:, ["valor_indenizacao"]]
+    else:
+        return (
+            read_results(model_strategy)
+            .query(f"decision=={decision} and episodes=={st.session_state.episodes}")
+            .loc[:, ["valor_indenizacao"]]
+        )
 
 def read_cols(strategy="random"):
     return read_results(strategy=strategy).columns.to_list()
 
+def bf_analysis(d=1):
+    overall =  bf(d)
+    approved = bf(d)
+    rejected = bf(d)
 
+    overall.fit(read_valor_indenizcao())
+    approved.fit(results_by_decision(model_strategy, 1))
+    rejected.fit(results_by_decision(model_strategy, 0))
+    return overall, approved, rejected
+
+
+def plot_benford(d=1):
+    overall, approved, rejected = bf_analysis()
+    overall_fig, _ = overall.plot()
+    approved_fig, _ = approved.plot()
+    rejected_fig, _ = rejected.plot()
+    return overall_fig, approved_fig, rejected_fig
+
+
+def melt_benford(d=1):
+    col = "percentage_emp"
+    df = [pd.DataFrame(b.results[col]).iloc[:, 1] for b in bf_analysis(d)]
+    df = pd.concat(df, axis=1)
+    df.columns = ["overall", "approved", "rejected"]
+    return df
 random_tab, dqn_tab = st.tabs(["Random", "Baseline"])
 
+
+
+#### Random Experiment Results
 with random_tab:
     st.write("A random strategy applied to the environment ")
     results = (
@@ -75,46 +118,9 @@ with random_tab:
 ## FOR DQN TAB
 
 
-def results_by_decision(model_strategy, decision=None):
-    if decision is None:
-        return read_results(model_strategy).loc[:, ["valor_indenizacao"]]
-    else:
-        return (
-            read_results(model_strategy)
-            .query(f"decision=={decision} and episodes=={st.session_state.episodes}")
-            .loc[:, ["valor_indenizacao"]]
-        )
-
-
-def bf_analysis(d=1):
-    overall =  bf(d)
-    approved = bf(d)
-    rejected = bf(d)
-
-    overall.fit(results_by_decision(model_strategy, None))
-    approved.fit(results_by_decision(model_strategy, 1))
-    rejected.fit(results_by_decision(model_strategy, 0))
-    return overall, approved, rejected
-
-
-def plot_benford(d=1):
-    overall, approved, rejected = bf_analysis()
-    overall_fig, _ = overall.plot()
-    approved_fig, _ = approved.plot()
-    rejected_fig, _ = rejected.plot()
-    return overall_fig, approved_fig, rejected_fig
-
-
-def melt_benford(d=1):
-    col = "percentage_emp"
-    bf0, bf1, bf2 = bf_analysis()
-    df = [pd.DataFrame(b.results[col]).iloc[:, 1] for b in bf_analysis(d)]
-    df = pd.concat(df, axis=1)
-    df.columns = ["overall", "approved", "rejected"]
-    return df
-
-
 with dqn_tab:
+
+    # Intro
     model_strategy = "baseline"
     results = (
         read_results(model_strategy)
@@ -133,6 +139,8 @@ with dqn_tab:
         st.cache_resource.clear()
 
 
+
+    ## Rewards
     st.plotly_chart(
         px.line(results.query("episodes>0"), x="steps", y="rewards", color="episodes")
     )
@@ -145,15 +153,20 @@ with dqn_tab:
         .reset_index()
     )
     rewards_summary["cum_sum"] = rewards_summary["sum"].cumsum()
-    st.dataframe(rewards_summary.sort_values('sum', ascending=False))
+    st.dataframe(rewards_summary.sort_values("sum", ascending=False))
     st.plotly_chart(px.line(data_frame=rewards_summary, x="episodes", y="cum_sum"))
 
+
+    ##
     st.dataframe(
-        read_results(model_strategy).pivot_table(
+        read_results(model_strategy)
+        .pivot_table(
             index="episodes",
-            values="decision",
-            aggfunc=["min", "mean", "max", "std", "count"],
-        ).reset_index()
+            values = 'id_proposta',
+            columns="decision",
+            aggfunc=["count"],
+        )
+        .reset_index()
     )
 
     max_reward = read_results(model_strategy).rewards.max()
@@ -179,15 +192,13 @@ with dqn_tab:
 
     overall, approved, rejected = plot_benford()
     col1, col2, col3 = st.columns(3)
-    
-
 
     o, a, r = bf_analysis()
     with col1:
         decision = None
         st.header("Overall")
         st.write(o.results["P_significant"])
-        p1, p2, p3 = Benford(3).plot(results_by_decision(model_strategy, decision=decision))
+        p1, p2, p3 = Benford(3).plot(read_valor_indenizcao())
         st.pyplot(p1)
         st.pyplot(p2)
         st.pyplot(p3)
@@ -196,19 +207,20 @@ with dqn_tab:
         decision = 1
         st.header("Approved")
         st.write(a.results["P_significant"])
-        p1, p2, p3 = Benford(3).plot(results_by_decision(model_strategy, decision=decision))
+        p1, p2, p3 = Benford(3).plot(
+            results_by_decision(model_strategy, decision=decision)
+        )
         st.pyplot(p1)
         st.pyplot(p2)
         st.pyplot(p3)
- 
 
     with col3:
         decision = 0
         st.header("Rejected")
         st.write(r.results["P_significant"])
-        p1, p2, p3 = Benford(3).plot(results_by_decision(model_strategy, decision=decision))
+        p1, p2, p3 = Benford(3).plot(
+            results_by_decision(model_strategy, decision=decision)
+        )
         st.pyplot(p1)
         st.pyplot(p2)
         st.pyplot(p3)
-
-
